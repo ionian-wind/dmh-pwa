@@ -58,7 +58,7 @@ Status: **in progress — editor surface, object interactions, shape selection, 
 
 ## M2 — Editor surface
 
-- [x] Layer create/rename/reorder/delete/folders
+- [x] Layer create/rename/reorder/delete/folders (drag-sorting with `@vue-dnd-kit/core`)
 - [x] Full layer settings (floor/walls/grid/background)
 - [x] Object tool: selection, live drag, resize/rotate handles for text/images, rotation for doors/stairs, shape selection, marquee and multi-object drag
 - [ ] Grouping, z-order, flip, duplicate, context menu (z-order/flip/duplicate done)
@@ -104,9 +104,10 @@ Status: **in progress — editor surface, object interactions, shape selection, 
 
 ## Progress log
 
-| Date       | Item                 | Notes                                                                                                                                                                                   |
-| ---------- | -------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 2026-11-10 | Plan moved into repo | Design docs complete                                                                                                                                                                    |
-| 2026-11-10 | M0 foundation        | Feature flag/routes, document model, Dexie repository, store/history/autosave, Pixi host/camera, grid/background, basic rectangle drawing, layers panel, PNG export, desktop smoke test |
-| 2026-11-10 | M2 interactions      | Live object drag/resize/rotate, all-object rotation, shape selection, layer sorting/folders, marquee and multi-object drag                                                              |
-| 2026-11-10 | Infinite canvas      | Background/grid follow the viewport, drawing and hit-testing work outside the starting frame, export and fit use content bounds (2020 tests / 243 files; coverage branches 87.02%)      |
+| Date       | Item                 | Notes                                                                                                                                                                                                                                     |
+| ---------- | -------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 2026-11-10 | Plan moved into repo | Design docs complete                                                                                                                                                                                                                      |
+| 2026-11-10 | M0 foundation        | Feature flag/routes, document model, Dexie repository, store/history/autosave, Pixi host/camera, grid/background, basic rectangle drawing, layers panel, PNG export, desktop smoke test                                                   |
+| 2026-11-10 | M2 interactions      | Live object drag/resize/rotate, all-object rotation, shape selection, layer sorting/folders, marquee and multi-object drag                                                                                                                |
+| 2026-11-10 | Infinite canvas      | Background/grid follow the viewport, drawing and hit-testing work outside the starting frame, export and fit use content bounds (2020 tests / 243 files; coverage branches 87.02%)                                                        |
+| 2026-11-10 | Layer drag sorting   | Replace native layer drag/drop with `@vue-dnd-kit/core`: drag rows before/after, drop into folder middles, keep folder subtrees together, and align up/down buttons with sibling order (2031 tests / 245 files; coverage branches 87.04%) |

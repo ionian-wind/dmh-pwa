@@ -5,6 +5,7 @@ import { useI18n } from 'vue-i18n';
 import { Notify } from 'quasar';
 import { DUNGEON_PRESETS } from '@/map-studio/domain/presets';
 import CanvasHost from '@/map-studio/components/CanvasHost.vue';
+import SortableLayerRow from '@/map-studio/components/SortableLayerRow.vue';
 import { useMapStudioStore } from '@/map-studio/stores/mapStudioStore';
 import { confirm, prompt } from '@/dialogs';
 import { useMapStudioAutosave } from '@/map-studio/composables/useMapStudioAutosave';
@@ -14,6 +15,7 @@ import {
   listStudioLocationOptions,
 } from '@/map-studio/integration/location';
 import type { PixiStudioRenderer } from '@/map-studio/renderer/PixiStudioRenderer';
+import type { LayerDropPayload } from '@/map-studio/domain/layers';
 
 const { t } = useI18n();
 const route = useRoute();
@@ -66,7 +68,6 @@ const orderedLayers = computed(() => {
 });
 const activeLayer = computed(() => store.activeLayer);
 const selectedObject = computed(() => store.selectedObject);
-const draggedLayerId = ref<string | null>(null);
 const presets = DUNGEON_PRESETS;
 const toolbar = computed(() => [
   { id: 'pan' as const, icon: 'tabler-hand-stop', label: t('mapStudio.pan') },
@@ -239,15 +240,8 @@ function isLayerHidden(layer: (typeof layers.value)[number]): boolean {
   return false;
 }
 
-function onLayerDragStart(layerId: string): void {
-  draggedLayerId.value = layerId;
-}
-
-function onLayerDrop(folderId: string | null): void {
-  if (draggedLayerId.value && draggedLayerId.value !== folderId) {
-    store.setLayerParent(draggedLayerId.value, folderId);
-  }
-  draggedLayerId.value = null;
+function onLayerSortDrop(payload: LayerDropPayload): void {
+  store.moveLayerRelative(payload.layerId, payload.targetId, payload.placement);
 }
 
 function toggleFolder(id: string): void {
@@ -706,23 +700,19 @@ async function applyToLocation(): Promise<void> {
               />
             </span>
           </div>
-          <div
+          <SortableLayerRow
             v-for="layer in orderedLayers.filter(
               (entry) => !isLayerHidden(entry),
             )"
             :key="layer.id"
+            :layer="layer"
             class="studio-layer-row"
             :class="{
               'studio-layer-row--active':
                 store.activeLayerId === layer.id && layer.type === 'dungeon',
             }"
             :style="{ paddingLeft: `${6 + layerDepth(layer) * 12}px` }"
-            draggable="true"
-            @dragstart="onLayerDragStart(layer.id)"
-            @dragover.prevent
-            @drop="
-              onLayerDrop(layer.type === 'folder' ? layer.id : layer.parentId)
-            "
+            @drop="onLayerSortDrop"
             @click="layer.type === 'dungeon' && store.setActiveLayer(layer.id)"
           >
             <QBtn
@@ -766,7 +756,7 @@ async function applyToLocation(): Promise<void> {
               :aria-label="t('mapStudio.toggleLock')"
               @click.stop="store.toggleLayerLock(layer.id)"
             />
-          </div>
+          </SortableLayerRow>
 
           <template
             v-if="

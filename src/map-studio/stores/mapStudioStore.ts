@@ -6,6 +6,7 @@ import type {
   DungeonShape,
   DungeonLayerStyle,
   ImagesLayer,
+  StudioLayer,
   StudioObject,
   StudioMap,
   StudioProject,
@@ -17,6 +18,10 @@ import {
   createFolderLayer,
 } from '@/map-studio/domain/document/factories';
 import { getDungeonPreset } from '@/map-studio/domain/presets';
+import {
+  reorderLayers,
+  type LayerDropPlacement,
+} from '@/map-studio/domain/layers';
 import {
   createDoorObject,
   createStairsObject,
@@ -364,6 +369,23 @@ export const useMapStudioStore = defineStore('mapStudio', () => {
     });
   }
 
+  function moveLayerRelative(
+    layerId: string,
+    targetId: string,
+    placement: LayerDropPlacement,
+  ): void {
+    const current = map.value;
+    if (!current) return;
+    const layers = reorderLayers(
+      current.layers as StudioLayer[],
+      layerId,
+      targetId,
+      placement,
+    );
+    if (!layers) return;
+    commit({ ...current, layers });
+  }
+
   function renameLayer(layerId: string, name: string): void {
     const current = map.value;
     if (!current) return;
@@ -400,21 +422,15 @@ export const useMapStudioStore = defineStore('mapStudio', () => {
   function moveLayer(layerId: string, direction: -1 | 1): void {
     const current = map.value;
     if (!current) return;
-    const ordered = [...current.layers].sort((a, b) => a.order - b.order);
-    const index = ordered.findIndex((layer) => layer.id === layerId);
-    const target = index + direction;
-    if (index === -1 || target < 0 || target >= ordered.length) return;
-    const a = ordered[index];
-    const b = ordered[target];
-    if (a.type === 'background' || b.type === 'background') return;
-    commit({
-      ...current,
-      layers: current.layers.map((layer) => {
-        if (layer.id === a.id) return { ...layer, order: b.order };
-        if (layer.id === b.id) return { ...layer, order: a.order };
-        return layer;
-      }),
-    });
+    const layer = current.layers.find((entry) => entry.id === layerId);
+    if (!layer) return;
+    const siblings = current.layers
+      .filter((entry) => entry.parentId === layer.parentId)
+      .sort((a, b) => a.order - b.order);
+    const index = siblings.findIndex((entry) => entry.id === layerId);
+    const target = siblings[index + direction];
+    if (!target) return;
+    moveLayerRelative(layerId, target.id, direction < 0 ? 'before' : 'after');
   }
 
   function setLayerStyle(layerId: string, style: DungeonLayerStyle): void {
@@ -822,6 +838,7 @@ export const useMapStudioStore = defineStore('mapStudio', () => {
     addFolder,
     toggleFolder,
     setLayerParent,
+    moveLayerRelative,
     renameLayer,
     removeLayer,
     moveLayer,
