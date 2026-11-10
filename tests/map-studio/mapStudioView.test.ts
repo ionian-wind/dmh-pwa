@@ -122,6 +122,30 @@ describe('MapStudioView UI', () => {
     wrapper.unmount();
   });
 
+  it('uses folder-open for expanded folders and toggles by clicking', async () => {
+    const { wrapper, store } = await mountView();
+    await wrapper.find('[aria-label="Add folder"]').trigger('click');
+    await flushPromises();
+    const folder = store.map!.layers.find((layer) => layer.type === 'folder')!;
+    const row = rowFor(wrapper, 'Folder');
+    expect(row.find('[data-stub="QIcon"]').attributes('name')).toBe(
+      'tabler-folder-open',
+    );
+    await row.trigger('click');
+    expect(
+      (
+        store.map!.layers.find((layer) => layer.id === folder.id) as {
+          expanded: boolean;
+        }
+      ).expanded,
+    ).toBe(false);
+    await flushPromises();
+    expect(
+      rowFor(wrapper, 'Folder').find('[data-stub="QIcon"]').attributes('name'),
+    ).toBe('tabler-folder');
+    wrapper.unmount();
+  });
+
   it('renames and deletes layers from the row menu', async () => {
     const { wrapper, store } = await mountView();
     await wrapper.find('[aria-label="Add folder"]').trigger('click');
@@ -231,6 +255,19 @@ describe('MapStudioView UI', () => {
     await wrapper.find('[title="Delete layer"]').trigger('click');
     await flushPromises();
     expect(store.activeLayer?.name).not.toBe('Renamed dungeon');
+    wrapper.unmount();
+  });
+
+  it('moves the active layer into a folder from layer settings', async () => {
+    const { wrapper, store } = await mountView();
+    await wrapper.find('[aria-label="Add folder"]').trigger('click');
+    await flushPromises();
+    const folder = store.map!.layers.find((layer) => layer.type === 'folder')!;
+    const folderSelect = wrapper
+      .findAll('select')
+      .find((select) => select.findAll('option').length === 2)!;
+    await folderSelect.setValue(folder.id);
+    expect(store.activeLayer?.parentId).toBe(folder.id);
     wrapper.unmount();
   });
 

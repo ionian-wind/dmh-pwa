@@ -1,7 +1,11 @@
 <script setup lang="ts">
 import { onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import { PixiStudioRenderer } from '@/map-studio/renderer/PixiStudioRenderer';
-import { hitTestObject, objectBounds } from '@/map-studio/domain/objects';
+import {
+  hitTestObject,
+  objectBounds,
+  unionBounds,
+} from '@/map-studio/domain/objects';
 import {
   pointInPolygon,
   shapeToPolygon,
@@ -9,6 +13,7 @@ import {
 import type {
   Point,
   StudioMap,
+  StudioObject,
   DungeonShape,
   StudioTool,
   ToolSettings,
@@ -49,6 +54,7 @@ const emit = defineEmits<{
     size: { x: number; y: number; width: number; height: number },
   ): void;
   (event: 'rotateObject', rotation: number): void;
+  (event: 'rotateSelection', delta: number): void;
   (event: 'ready', renderer: PixiStudioRenderer): void;
 }>();
 
@@ -78,6 +84,7 @@ let drag:
       center: Point;
       startAngle: number;
       rotation: number;
+      multi: boolean;
     }
   | null = null;
 const doorPoints = ref<Point[]>([]);
@@ -92,6 +99,20 @@ function snap(value: number): number {
   if (!props.settings.snap) return value;
   const division = Math.max(1, props.settings.division);
   return Math.round(value * division) / division;
+}
+
+function selectedObjects(): StudioObject[] {
+  const ids = new Set(
+    props.selectedObjectIds?.length
+      ? props.selectedObjectIds
+      : props.selectedObjectId
+        ? [props.selectedObjectId]
+        : [],
+  );
+  return props.map.layers
+    .filter((layer) => layer.type === 'images')
+    .flatMap((layer) => (layer.type === 'images' ? layer.objects : []))
+    .filter((object) => ids.has(object.id));
 }
 
 function localPoint(
@@ -118,12 +139,11 @@ function onPointerDown(event: PointerEvent): void {
   if (event.button !== 0) return;
   if (props.tool === 'object') {
     const point = renderer.value.screenToWorld(sx, sy);
-    const selected = props.map.layers
-      .filter((layer) => layer.type === 'images')
-      .flatMap((layer) => (layer.type === 'images' ? layer.objects : []))
-      .find((object) => object.id === props.selectedObjectId);
-    if (selected) {
-      const bounds = objectBounds(selected);
+    const selection = selectedObjects();
+    const selected = selection[0];
+    const bounds = unionBounds(selection);
+    if (selected && bounds) {
+      const multi = selection.length > 1;
       const vp = renderer.value.getViewport();
       const toScreen = (x: number, y: number): [number, number] => [
         x * 70 * vp.zoom + vp.x,
@@ -143,7 +163,9 @@ function onPointerDown(event: PointerEvent): void {
           y: bounds.y + bounds.height,
         },
       ];
-      for (const corner of selected.type === 'text' || selected.type === 'image'
+      for (const corner of multi ||
+      selected.type === 'text' ||
+      selected.type === 'image'
         ? corners
         : []) {
         const [hx, hy] = toScreen(corner.x, corner.y);
@@ -178,7 +200,8 @@ function onPointerDown(event: PointerEvent): void {
           kind: 'rotate',
           center,
           startAngle: Math.atan2(point[1] - center[1], point[0] - center[0]),
-          rotation: selected.transform.rotation,
+          rotation: multi ? 0 : selected.transform.rotation,
+          multi,
         };
         emit('beginObjectDrag');
         return;
@@ -318,7 +341,11 @@ function onPointerMove(event: PointerEvent): void {
       current[1] - drag.center[1],
       current[0] - drag.center[0],
     );
-    emit('rotateObject', drag.rotation + angle - drag.startAngle);
+    if (drag.multi) {
+      emit('rotateSelection', angle - drag.startAngle);
+    } else {
+      emit('rotateObject', drag.rotation + angle - drag.startAngle);
+    }
     return;
   }
   if (drag.kind === 'marquee') {
@@ -567,14 +594,11 @@ watch(
 
 function updateSelection(): void {
   renderer.value?.setShapeSelection(props.selectedShape ?? null);
-  const object = props.map.layers
-    .filter((layer) => layer.type === 'images')
-    .flatMap((layer) => (layer.type === 'images' ? layer.objects : []))
-    .find((entry) => entry.id === props.selectedObjectId);
-  renderer.value?.setSelection(object ? objectBounds(object) : null);
+  renderer.value?.setSelection(unionBounds(selectedObjects()));
 }
 
 watch(() => props.selectedObjectId, updateSelection);
+watch(() => props.selectedObjectIds, updateSelection, { deep: true });
 watch(() => props.selectedShape, updateSelection);
 
 onBeforeUnmount(() => {

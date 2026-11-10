@@ -98,20 +98,12 @@ async function deleteLayer(layer: StudioLayer): Promise<void> {
               'studio-layer-row--active':
                 store.activeLayerId === layer.id && layer.type === 'dungeon',
             }"
-            @click="layer.type === 'dungeon' && store.setActiveLayer(layer.id)"
+            @click="
+              layer.type === 'folder'
+                ? toggleFolder(layer.id)
+                : layer.type === 'dungeon' && store.setActiveLayer(layer.id)
+            "
           >
-            <QBtn
-              v-if="layer.type === 'folder'"
-              flat
-              dense
-              round
-              :icon="
-                layer.expanded ? 'tabler-chevron-down' : 'tabler-chevron-right'
-              "
-              :aria-label="t('mapStudio.toggleFolder')"
-              @pointerdown.stop
-              @click.stop="toggleFolder(layer.id)"
-            />
             <QIcon
               :name="
                 layer.type === 'background'
@@ -119,7 +111,9 @@ async function deleteLayer(layer: StudioLayer): Promise<void> {
                   : layer.type === 'images'
                     ? 'tabler-photo-plus'
                     : layer.type === 'folder'
-                      ? 'tabler-folder'
+                      ? layer.expanded
+                        ? 'tabler-folder-open'
+                        : 'tabler-folder'
                       : 'tabler-square'
               "
               size="18px"

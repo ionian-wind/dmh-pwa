@@ -62,17 +62,21 @@
 ## 5. Top menu
 
 ### File
+
 - New map (project), New project, Open library, Save, Save as, Import `.ds`, Import image(s), Export, Apply to location, Return to library.
 - Recent: last used maps (local).
 - Save status and “Saved to device” text.
 
 ### Edit
+
 - Undo, Redo, Cut, Copy, Paste, Duplicate, Delete, Select all objects, Deselect, Preferences.
 
 ### View
+
 - Theme (system/light/dark), Hide UI, Show grid, Show all grids, Isometric, Fit to map, Zoom 100%, Zoom to selection, Show fog preview.
 
 ### Help
+
 - Quick start, keyboard shortcuts, feature docs, about/versions.
 
 Menus are accessible (`role=menu`, arrow keys, Escape). On mobile they become a single overflow sheet.
@@ -80,6 +84,7 @@ Menus are accessible (`role=menu`, arrow keys, Escape). On mobile they become a 
 ## 6. Left sidebar features
 
 Rail icons (order):
+
 1. Presets (Scrawl)
 2. Images
 3. Clipboard
@@ -92,12 +97,14 @@ Rail icons (order):
 Each panel is independent and remembers its scroll/expanded sections.
 
 ### Presets panel
+
 - Sections: Dungeon Presets, World Building, Custom.
 - Preset card: thumbnail, name; hover/focus reveals “Add layer” and “Apply to current” buttons; mobile: tap opens a small action sheet.
 - Disabled/hidden when no active dungeon layer (apply button disabled with explanation).
 - Custom: “Save current style”, rename inline, update/delete actions.
 
 ### Images panel
+
 - Search field; creator/category filter.
 - Collapsible Favorites / Custom / Built-in.
 - Thumbnail grid; hover tooltip with name; star to favorite; upload button.
@@ -106,16 +113,19 @@ Each panel is independent and remembers its scroll/expanded sections.
 - Drag/drop onto canvas places at pointer; drop onto panel imports.
 
 ### Clipboard panel
+
 - Grid/list of geometry fragments with thumbnail, name (optional), source layer style badge.
 - Click pastes; delete/clear actions; “Clear all” with confirm.
 - Session-only by default; optional persistence toggle.
 
 ### Textures panel
+
 - Toggle “Texture on”.
 - Texture grid with attribution; scale/opacity sliders.
 - Preview updates live on canvas.
 
 ### Lighting panel
+
 - Global toggle.
 - “Add light” form: preset select, radius, bright radius, color, intensity, Add button.
 - List of placed lights with enable/delete/select actions.
@@ -123,12 +133,14 @@ Each panel is independent and remembers its scroll/expanded sections.
 - “Blocks light” is a layer setting, with a link/hint.
 
 ### Random Dungeon panel
+
 - Settings form (size, room count/size, corridors, layout, doors, room shapes, roughness).
 - Seed field with copy/randomize; Generate button with confirm.
 - Warning that generation replaces the current map.
 - Plugins/import area for Watabou/donjon.
 
 ### Export panel
+
 - Type selector: PNG, WebP, JPG, PDF, UVTT.
 - Filename.
 - Pixels per cell (default 70; validation).
@@ -139,6 +151,7 @@ Each panel is independent and remembers its scroll/expanded sections.
 - Local share explanation: file download only.
 
 ### Maps panel
+
 - Project map list; add, rename, duplicate, delete, reorder.
 - Import maps from another `.ds` file; thumbnails.
 - Current map highlighted.
@@ -146,15 +159,18 @@ Each panel is independent and remembers its scroll/expanded sections.
 ## 7. Right sidebar: Layers and Layer Settings
 
 ### Layers panel
-- Header: “Layers”, add folder, add layer (opens preset picker), collapse all.
-- Rows: expand arrow (folders), type icon, name, visibility eye, lock, overflow menu.
+
+- Header: “Layers”, add folder, add layer, move up/down.
+- Rows: folder icon (open/closed state), type icon, name, visibility eye, lock, overflow menu. There is no separate expand arrow: clicking a folder row toggles it.
 - Drag handle on hover; row drag reorders within parent and into folders.
+- The panel is wide enough for settings and short enough to leave the canvas visible. Only the layer tree scrolls; layer/object properties remain fixed and fully visible.
 - Active row highlight; multi-select with Shift/Ctrl/Cmd.
 - Context menu: rename, duplicate, delete, send to front/back, group into folder, lock/unlock, hide/show.
 - Footer: total objects/shapes count and performance hint.
 - Mobile: full-height sheet, rows 48 px, swipe actions for hide/lock/delete.
 
 ### Layer Settings
+
 - Header changes with selection: layer name or “N objects selected”.
 - Sections collapse independently; visibility eyes on sections.
 - Dungeon layer: Opacity, Floor texture, Walls, Floor, Grid, Shadow, Hatching, Shading, Advanced.
@@ -179,8 +195,9 @@ Each panel is independent and remembers its scroll/expanded sections.
 
 ## 9. Selection UX
 
-- Single object: bounding box, 8 resize handles, rotate handle, quick action bar (duplicate, delete, front/back, more).
-- Multi-object: combined bounding box + action bar; mixed types show only valid operations.
+- Single object: bounding box, 4 corner resize handles, rotate handle, quick action bar (duplicate, delete, front/back, more).
+- Multi-object: one combined bounding box around every selected object plus corner resize and rotate handles. Resizing scales all selected objects from the group bounds; rotating turns every selected object around the group center while preserving relative positions.
+- Mixed selections are transformed as one axis-aligned group; text/image boxes and door/stair geometry all participate.
 - Geometry selection: outline + mini menu above bounds (Copy/Cut/Delete).
 - Paste mode: preview follows pointer; action bar shows Confirm/Cancel; arrow keys nudge; Enter/Escape; touch buttons.
 - Context menu anchored to pointer, flips to stay on screen.

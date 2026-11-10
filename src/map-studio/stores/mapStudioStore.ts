@@ -29,6 +29,7 @@ import {
   createImageObject,
   moveObject,
   objectBounds,
+  unionBounds,
 } from '@/map-studio/domain/objects';
 import {
   listMaps,
@@ -612,6 +613,154 @@ export const useMapStudioStore = defineStore('mapStudio', () => {
     }
   }
 
+  function selectedSnapshotObjects(): StudioObject[] {
+    const source = objectDragSnapshot ?? map.value;
+    if (!source) return [];
+    const ids = new Set(selectedObjectIds.value);
+    return source.layers
+      .filter((layer) => layer.type === 'images')
+      .flatMap((layer) => (layer.type === 'images' ? layer.objects : []))
+      .filter((object) => ids.has(object.id));
+  }
+
+  function applyGroupTransform(
+    transform: (object: StudioObject) => StudioObject,
+  ): void {
+    const current = map.value;
+    const layer = imagesLayer.value;
+    const ids = new Set(selectedObjectIds.value);
+    const originals = new Map(
+      selectedSnapshotObjects().map((object) => [object.id, object]),
+    );
+    if (!current || !layer || !ids.size || !originals.size) return;
+    map.value = {
+      ...current,
+      updatedAt: Date.now(),
+      layers: current.layers.map((entry) =>
+        entry.id === layer.id
+          ? {
+              ...layer,
+              objects: layer.objects.map((object) => {
+                if (!ids.has(object.id)) return object;
+                const original = originals.get(object.id);
+                return original ? transform(original) : object;
+              }),
+            }
+          : entry,
+      ),
+    };
+    dirty.value = true;
+  }
+
+  function resizeSelectedObjectsLive(bounds: {
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+  }): void {
+    const originals = selectedSnapshotObjects();
+    const origin = unionBounds(originals);
+    if (!origin) return;
+    const sx = Math.max(0.01, bounds.width) / Math.max(0.2, origin.width);
+    const sy = Math.max(0.01, bounds.height) / Math.max(0.2, origin.height);
+    applyGroupTransform((object) => {
+      const objectBox = objectBounds(object);
+      const x = bounds.x + (objectBox.x - origin.x) * sx;
+      const y = bounds.y + (objectBox.y - origin.y) * sy;
+      if (object.type === 'text' || object.type === 'image') {
+        return {
+          ...object,
+          transform: {
+            ...object.transform,
+            x,
+            y,
+            width: Math.max(0.2, object.transform.width * sx),
+            height: Math.max(0.2, object.transform.height * sy),
+          },
+        };
+      }
+      if (object.type === 'door') {
+        return {
+          ...object,
+          a: [
+            x + (object.a[0] - objectBox.x) * sx,
+            y + (object.a[1] - objectBox.y) * sy,
+          ],
+          b: [
+            x + (object.b[0] - objectBox.x) * sx,
+            y + (object.b[1] - objectBox.y) * sy,
+          ],
+          transform: {
+            ...object.transform,
+            x,
+            y,
+            width: Math.max(0.2, object.transform.width * sx),
+            height: Math.max(0.2, object.transform.height * sy),
+          },
+        };
+      }
+      return {
+        ...object,
+        points: object.points.map(([px, py]) => [
+          x + (px - objectBox.x) * sx,
+          y + (py - objectBox.y) * sy,
+        ]),
+        transform: {
+          ...object.transform,
+          x,
+          y,
+          width: Math.max(0.2, object.transform.width * sx),
+          height: Math.max(0.2, object.transform.height * sy),
+        },
+      };
+    });
+  }
+
+  function rotateSelectedObjectsLive(delta: number): void {
+    const originals = selectedSnapshotObjects();
+    const origin = unionBounds(originals);
+    if (!origin || !Number.isFinite(delta)) return;
+    const cx = origin.x + origin.width / 2;
+    const cy = origin.y + origin.height / 2;
+    const cos = Math.cos(delta);
+    const sin = Math.sin(delta);
+    const rotatePoint = ([x, y]: [number, number]): [number, number] => [
+      cx + (x - cx) * cos - (y - cy) * sin,
+      cy + (x - cx) * sin + (y - cy) * cos,
+    ];
+    applyGroupTransform((object) => {
+      const rotation = object.transform.rotation + delta;
+      if (object.type === 'text' || object.type === 'image') {
+        const center = rotatePoint([
+          object.transform.x + object.transform.width / 2,
+          object.transform.y + object.transform.height / 2,
+        ]);
+        return {
+          ...object,
+          transform: {
+            ...object.transform,
+            x: center[0] - object.transform.width / 2,
+            y: center[1] - object.transform.height / 2,
+            rotation,
+          },
+        };
+      }
+      if (object.type === 'door') {
+        return {
+          ...object,
+          a: rotatePoint(object.a),
+          b: rotatePoint(object.b),
+          transform: { ...object.transform, rotation },
+        };
+      }
+      return {
+        ...object,
+        points: object.points.map(rotatePoint),
+        transform: { ...object.transform, rotation },
+      };
+    });
+  }
+
   function patchSelectedObjectLive(patch: Record<string, any>): void {
     const current = map.value;
     const layer = imagesLayer.value;
@@ -851,6 +1000,8 @@ export const useMapStudioStore = defineStore('mapStudio', () => {
     moveSelectedObjectLive,
     patchSelectedObjectLive,
     rotateSelectedObject,
+    resizeSelectedObjectsLive,
+    rotateSelectedObjectsLive,
     endObjectDrag,
     removeSelectedObject,
     updateObject,

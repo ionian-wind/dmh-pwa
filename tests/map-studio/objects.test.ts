@@ -6,6 +6,7 @@ import {
   hitTestObject,
   moveObject,
   objectBounds,
+  unionBounds,
 } from '@/map-studio/domain/objects';
 
 describe('map studio objects', () => {
@@ -54,5 +55,19 @@ describe('map studio objects', () => {
     expect(movedStairs.type === 'stairs' && movedStairs.points[0]).toEqual([
       1, 1,
     ]);
+  });
+});
+
+describe('map studio selection bounds', () => {
+  it('unions the bounds of several objects', () => {
+    const a = createTextObject('A', [1, 1], 0);
+    const b = createTextObject('B', [5, 4], 1);
+    expect(unionBounds([])).toBeNull();
+    expect(unionBounds([a])).toMatchObject(objectBounds(a));
+    const bounds = unionBounds([a, b])!;
+    expect(bounds.x).toBe(1);
+    expect(bounds.y).toBe(1);
+    expect(bounds.x + bounds.width).toBeGreaterThanOrEqual(8);
+    expect(bounds.y + bounds.height).toBeGreaterThan(4);
   });
 });

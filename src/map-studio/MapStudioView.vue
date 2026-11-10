@@ -143,6 +143,10 @@ function resizeSelected(size: {
   width: number;
   height: number;
 }): void {
+  if (store.selectedObjectIds.length > 1) {
+    store.resizeSelectedObjectsLive(size);
+    return;
+  }
   const object = selectedObject.value;
   if (!object || (object.type !== 'text' && object.type !== 'image')) return;
   store.patchSelectedObjectLive({
@@ -152,6 +156,10 @@ function resizeSelected(size: {
 
 function rotateSelected(rotation: number): void {
   if (selectedObject.value) store.rotateSelectedObject(rotation);
+}
+
+function rotateSelection(delta: number): void {
+  store.rotateSelectedObjectsLive(delta);
 }
 
 async function editText(id: string): Promise<void> {
@@ -426,6 +434,7 @@ async function applyToLocation(): Promise<void> {
           @image="addImage"
           @resizeObject="resizeSelected"
           @rotateObject="rotateSelected"
+          @rotateSelection="rotateSelection"
           @ready="onRendererReady"
         />
 

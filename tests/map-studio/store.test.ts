@@ -540,3 +540,68 @@ describe('map studio multi-object drag', () => {
     expect(moved[1].transform.x).toBe(4);
   });
 });
+
+describe('map studio group resize and rotate', () => {
+  it('scales and rotates selected text objects together', () => {
+    const store = useMapStudioStore();
+    store.setMap(createMap(createProject().id));
+    store.addText('A', [1, 1]);
+    store.addText('B', [3, 3]);
+    const [a, b] = store.imagesLayer!.objects;
+    store.selectObjects([a.id, b.id]);
+    store.beginObjectDrag();
+    store.resizeSelectedObjectsLive({
+      x: 1,
+      y: 1,
+      width: 10,
+      height: 4.896,
+    });
+    const resized = store.imagesLayer!.objects;
+    expect(resized[0].transform.width).toBeCloseTo(6);
+    expect(resized[1].transform.x).toBeCloseTo(5);
+    store.rotateSelectedObjectsLive(Math.PI / 2);
+    expect(store.imagesLayer!.objects[0].transform.rotation).toBeCloseTo(
+      Math.PI / 2,
+    );
+    expect(store.imagesLayer!.objects[1].transform.rotation).toBeCloseTo(
+      Math.PI / 2,
+    );
+    store.endObjectDrag();
+    expect(store.canUndo).toBe(true);
+  });
+
+  it('scales door and stair geometry together', () => {
+    const store = useMapStudioStore();
+    store.setMap(createMap(createProject().id));
+    store.addDoor([0, 0], [2, 0]);
+    store.addStairs([
+      [0, 2],
+      [2, 2],
+      [2, 4],
+    ]);
+    const [door, stairs] = store.imagesLayer!.objects;
+    store.selectObjects([door.id, stairs.id]);
+    store.beginObjectDrag();
+    store.resizeSelectedObjectsLive({
+      x: 0,
+      y: 0,
+      width: 4,
+      height: 8,
+    });
+    const resizedDoor = store.imagesLayer!.objects.find(
+      (object) => object.id === door.id,
+    )!;
+    expect(resizedDoor.type === 'door' && resizedDoor.b[0]).toBeCloseTo(4);
+    const resizedStairs = store.imagesLayer!.objects.find(
+      (object) => object.id === stairs.id,
+    )!;
+    expect(
+      resizedStairs.type === 'stairs' && resizedStairs.points[2][1],
+    ).toBeCloseTo(8);
+    store.rotateSelectedObjectsLive(Math.PI / 2);
+    expect(
+      store.imagesLayer!.objects.find((object) => object.id === door.id),
+    ).toBeTruthy();
+    store.endObjectDrag();
+  });
+});

@@ -163,6 +163,27 @@ export function objectBounds(object: StudioObject): Bounds {
   };
 }
 
+export function unionBounds(objects: StudioObject[]): Bounds | null {
+  if (!objects.length) return null;
+  let minX = Infinity;
+  let minY = Infinity;
+  let maxX = -Infinity;
+  let maxY = -Infinity;
+  for (const object of objects) {
+    const bounds = objectBounds(object);
+    minX = Math.min(minX, bounds.x);
+    minY = Math.min(minY, bounds.y);
+    maxX = Math.max(maxX, bounds.x + bounds.width);
+    maxY = Math.max(maxY, bounds.y + bounds.height);
+  }
+  return {
+    x: minX,
+    y: minY,
+    width: Math.max(0.2, maxX - minX),
+    height: Math.max(0.2, maxY - minY),
+  };
+}
+
 export function pointInBounds(
   point: Point,
   bounds: Bounds,
