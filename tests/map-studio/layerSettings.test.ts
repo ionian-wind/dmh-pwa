@@ -31,12 +31,23 @@ function mountSettings(pinia: ReturnType<typeof createPinia>) {
 describe('StudioLayerSettings', () => {
   beforeEach(() => setActivePinia(createPinia()));
 
-  it('renders nothing without a layer', () => {
+  it('renders nothing without a layer', async () => {
     const pinia = createPinia();
     setActivePinia(pinia);
     const store = useMapStudioStore();
     const wrapper = mountSettings(pinia);
     expect(wrapper.text()).toBe('');
+    const vm = wrapper.vm as any;
+    await vm.renameLayer();
+    await vm.deleteLayer();
+    vm.setFloorColor({ target: { value: '#fff' } });
+    vm.setWallColor({ target: { value: '#fff' } });
+    vm.setWallWidth({ target: { value: '1' } });
+    vm.setWallGridColor({ target: { value: '#fff' } });
+    vm.setWallGridWidth({ target: { value: '1' } });
+    vm.toggleLayerGrid();
+    vm.toggleBlocksLight();
+    vm.setParent({ target: { value: '' } });
     store.setMap(createMap(createProject().id));
     wrapper.unmount();
   });

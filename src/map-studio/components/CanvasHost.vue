@@ -44,6 +44,7 @@ const props = defineProps<{
   selectedObjectId?: string | null;
   selectedShape?: DungeonShape | null;
   selectedObjectIds?: string[];
+  highlightedLayerId?: string | null;
 }>();
 
 const emit = defineEmits<{
@@ -1339,6 +1340,7 @@ onMounted(async () => {
   instance.setMap(props.map);
   instance.fit();
   updateSelection();
+  updateLayerHighlight();
   renderer.value = instance;
   emit('ready', instance);
   resizeObserver = new ResizeObserver(() => {
@@ -1358,6 +1360,27 @@ watch(
     updateSelection();
   },
 );
+
+function updateLayerHighlight(): void {
+  if (!renderer.value) return;
+  const layer = props.map.layers.find(
+    (entry) => entry.id === props.highlightedLayerId,
+  );
+  if (!layer) {
+    renderer.value.setLayerHighlight(null, null);
+    return;
+  }
+  if (layer.type === 'dungeon') {
+    renderer.value.setLayerHighlight(layer, null);
+  } else if (layer.type === 'images') {
+    renderer.value.setLayerHighlight(
+      null,
+      layer.objects.filter((object) => object.visible).map(objectBounds),
+    );
+  } else {
+    renderer.value.setLayerHighlight(null, null);
+  }
+}
 
 function updateSelection(): void {
   renderer.value?.setShapeSelection(props.selectedShape ?? null);
@@ -1391,6 +1414,11 @@ watch(
 watch(() => props.selectedObjectId, updateSelection);
 watch(() => props.selectedObjectIds, updateSelection, { deep: true });
 watch(() => props.selectedShape, updateSelection);
+watch(() => props.highlightedLayerId, updateLayerHighlight);
+watch(
+  () => props.map,
+  () => updateLayerHighlight(),
+);
 
 defineExpose({
   clearGeometrySelection,

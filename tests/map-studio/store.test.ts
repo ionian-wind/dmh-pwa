@@ -837,3 +837,26 @@ describe('map studio object grouping and clipboard', () => {
     expect(store.imagesLayer!.objects[0].id).toBe(first);
   });
 });
+
+describe('map studio bulk layer guards', () => {
+  it('ignores bulk actions without a usable selection', () => {
+    const store = useMapStudioStore();
+    store.bulkDuplicateLayers();
+    store.bulkRemoveLayers();
+    store.bulkToggleLayerLock();
+    store.bulkGroupIntoFolder();
+    store.setMap(createMap(createProject().id));
+    store.bulkDuplicateLayers();
+    store.bulkRemoveLayers();
+    store.bulkToggleLayerLock();
+    store.bulkGroupIntoFolder();
+    const background = store.map!.layers.find(
+      (layer) => layer.type === 'background',
+    )!;
+    store.setSettingsLayer(background.id);
+    store.bulkRemoveLayers();
+    expect(store.map!.layers.some((layer) => layer.type === 'background')).toBe(
+      true,
+    );
+  });
+});

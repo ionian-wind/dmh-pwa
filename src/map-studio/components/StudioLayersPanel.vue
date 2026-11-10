@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed } from 'vue';
+import { computed, onBeforeUnmount, ref, useTemplateRef } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useMapStudioStore } from '@/map-studio/stores/mapStudioStore';
 import LayerTree from '@/map-studio/components/LayerTree.vue';
@@ -12,6 +12,69 @@ import type { StudioLayer } from '@/map-studio/domain/document/types';
 const { t } = useI18n();
 const store = useMapStudioStore();
 const layers = computed(() => store.map?.layers ?? []);
+const panelRef = useTemplateRef<HTMLElement>('panel');
+const panelHeight = ref<number | null>(null);
+let resizeStartY = 0;
+let resizeStartHeight = 0;
+const multiSelected = computed(() => store.selectedLayerIds.length > 1);
+const allSelectedLocked = computed(() => {
+  const ids = new Set(store.selectedLayerIds);
+  const selected = (store.map?.layers ?? []).filter((layer) =>
+    ids.has(layer.id),
+  );
+  return selected.length > 0 && selected.every((layer) => layer.locked);
+});
+
+function onLayerClick(layer: StudioLayer, event: MouseEvent): void {
+  if (event.shiftKey) {
+    store.selectLayerRange(layer.id);
+    return;
+  }
+  if (event.ctrlKey || event.metaKey) {
+    store.toggleLayerSelection(layer.id);
+    return;
+  }
+  store.setSettingsLayer(layer.id);
+  if (layer.type === 'folder') toggleFolder(layer.id);
+}
+
+function startResize(event: PointerEvent): void {
+  if (!panelRef.value) return;
+  event.preventDefault();
+  resizeStartY = event.clientY;
+  resizeStartHeight = panelRef.value.clientHeight;
+  window.addEventListener('pointermove', onResizeMove);
+  window.addEventListener('pointerup', stopResize, { once: true });
+}
+
+function onResizeMove(event: PointerEvent): void {
+  panelHeight.value = Math.max(
+    240,
+    Math.min(
+      window.innerHeight - 100,
+      resizeStartHeight + event.clientY - resizeStartY,
+    ),
+  );
+}
+
+function stopResize(): void {
+  window.removeEventListener('pointermove', onResizeMove);
+}
+
+async function bulkDelete(): Promise<void> {
+  if (!multiSelected.value) return;
+  if (
+    !(await confirm(
+      t('common.confirmDelete', {
+        title: `${store.selectedLayerIds.length} layers`,
+      }),
+    ))
+  )
+    return;
+  store.bulkRemoveLayers();
+}
+
+onBeforeUnmount(stopResize);
 
 function onLayerReorder(payload: {
   layers: StudioLayer[];
@@ -45,7 +108,11 @@ async function deleteLayer(layer: StudioLayer): Promise<void> {
 </script>
 
 <template>
-  <aside class="studio-layers">
+  <aside
+    ref="panel"
+    class="studio-layers"
+    :style="panelHeight ? { height: `${panelHeight}px` } : undefined"
+  >
     <div class="studio-layers-title row items-center justify-between">
       <span>{{ t('mapStudio.layers') }}</span>
       <span class="row q-gutter-xs">
@@ -90,20 +157,60 @@ async function deleteLayer(layer: StudioLayer): Promise<void> {
       </span>
     </div>
 
+    <div v-if="multiSelected" class="studio-layer-bulk">
+      <span class="studio-layer-bulk-label">
+        {{
+          t('mapStudio.layersSelected', {
+            count: store.selectedLayerIds.length,
+          })
+        }}
+      </span>
+      <QBtn
+        flat
+        dense
+        round
+        icon="tabler-copy"
+        :title="t('mapStudio.duplicate')"
+        @click="store.bulkDuplicateLayers()"
+      />
+      <QBtn
+        flat
+        dense
+        round
+        icon="tabler-folder-plus"
+        :title="t('mapStudio.groupIntoFolder')"
+        @click="store.bulkGroupIntoFolder()"
+      />
+      <QBtn
+        flat
+        dense
+        round
+        :icon="allSelectedLocked ? 'tabler-lock' : 'tabler-lock-open'"
+        :title="t('mapStudio.toggleLock')"
+        @click="store.bulkToggleLayerLock()"
+      />
+      <QBtn
+        flat
+        dense
+        round
+        icon="tabler-trash"
+        :title="t('common.delete')"
+        @click="bulkDelete"
+      />
+    </div>
+
     <div class="studio-layer-list">
       <LayerTree :layers="layers" @reorder="onLayerReorder">
         <template #row="{ layer }">
           <div
             class="studio-layer-row"
             :class="{
-              'studio-layer-row--active':
-                store.activeLayerId === layer.id && layer.type === 'dungeon',
+              'studio-layer-row--selected': store.selectedLayerIds.includes(
+                layer.id,
+              ),
+              'studio-layer-row--active': store.settingsLayerId === layer.id,
             }"
-            @click="
-              layer.type === 'folder'
-                ? toggleFolder(layer.id)
-                : layer.type === 'dungeon' && store.setActiveLayer(layer.id)
-            "
+            @click="onLayerClick(layer, $event)"
           >
             <QIcon
               :name="
@@ -119,7 +226,11 @@ async function deleteLayer(layer: StudioLayer): Promise<void> {
               "
               size="18px"
             />
-            <span class="studio-layer-name">{{ layer.name }}</span>
+            <span
+              class="studio-layer-name"
+              @dblclick.stop="renameLayer(layer)"
+              >{{ layer.name }}</span
+            >
             <QBtn
               flat
               dense
@@ -214,6 +325,7 @@ async function deleteLayer(layer: StudioLayer): Promise<void> {
       <StudioObjectSettings v-else-if="store.selectedObject" />
       <StudioLayerSettings v-else />
     </div>
+    <div class="studio-layers-resize" @pointerdown="startResize" />
   </aside>
 </template>
 
@@ -260,8 +372,33 @@ async function deleteLayer(layer: StudioLayer): Promise<void> {
   cursor: pointer;
 }
 
+.studio-layer-row--selected {
+  background: color-mix(in srgb, var(--q-primary) 12%, transparent);
+}
 .studio-layer-row--active {
   background: var(--color-selected-surface);
+}
+.studio-layer-bulk {
+  display: flex;
+  gap: 2px;
+  align-items: center;
+  padding: 2px 4px 6px;
+  border-top: 1px solid var(--color-border-light);
+}
+.studio-layer-bulk-label {
+  flex: 1;
+  overflow: hidden;
+  font-size: 11px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.studio-layers-resize {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  height: 6px;
+  cursor: ns-resize;
 }
 
 .studio-layer-name {

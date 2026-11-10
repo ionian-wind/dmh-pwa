@@ -575,6 +575,9 @@ async function applyToLocation(): Promise<void> {
           :settings="store.toolSettings"
           :selected-object-id="store.selectedObjectId"
           :selected-object-ids="store.selectedObjectIds"
+          :highlighted-layer-id="
+            store.selectedObjectIds.length > 1 ? null : store.settingsLayerId
+          "
           :selected-shape="store.selectedShape"
           @rectangle="addRectangle"
           @circle="store.addCircle"

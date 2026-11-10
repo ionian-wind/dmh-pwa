@@ -94,6 +94,7 @@ export class PixiStudioRenderer {
   private selectionLayer = new Graphics();
   private shapeSelectionLayer = new Graphics();
   private geometrySelectionLayer = new Graphics();
+  private layerHighlightLayer = new Graphics();
   private previewLayer = new Graphics();
   private map: StudioMap | null = null;
   private imageTextures = new Map<string, Texture>();
@@ -125,6 +126,7 @@ export class PixiStudioRenderer {
       this.gridLayer,
       this.dungeonContainer,
       this.objectsContainer,
+      this.layerHighlightLayer,
       this.shapeSelectionLayer,
       this.geometrySelectionLayer,
       this.selectionLayer,
@@ -262,6 +264,41 @@ export class PixiStudioRenderer {
             .stroke({ color: '#2d6fb3', width: 3 });
         }
       }
+    }
+    this.render();
+  }
+
+  setLayerHighlight(
+    layer: DungeonLayer | null,
+    objects: Bounds[] | null,
+  ): void {
+    this.layerHighlightLayer.clear();
+    if (layer) {
+      const compiled = compileDungeonLayer(layer);
+      for (const polygon of compiled.polygons) {
+        const outer = polygon[0];
+        if (!outer || outer.length < 3) continue;
+        this.layerHighlightLayer
+          .poly(
+            outer.flatMap(([x, y]) => [
+              x * BASE_PIXELS_PER_CELL,
+              y * BASE_PIXELS_PER_CELL,
+            ]),
+          )
+          .fill({ color: '#4a90d9', alpha: 0.1 })
+          .stroke({ color: '#2d6fb3', width: 2, alpha: 0.5 });
+      }
+    }
+    for (const bounds of objects ?? []) {
+      this.layerHighlightLayer
+        .rect(
+          bounds.x * BASE_PIXELS_PER_CELL,
+          bounds.y * BASE_PIXELS_PER_CELL,
+          bounds.width * BASE_PIXELS_PER_CELL,
+          bounds.height * BASE_PIXELS_PER_CELL,
+        )
+        .fill({ color: '#4a90d9', alpha: 0.08 })
+        .stroke({ color: '#2d6fb3', width: 1.5, alpha: 0.6 });
     }
     this.render();
   }

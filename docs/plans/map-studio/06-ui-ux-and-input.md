@@ -164,7 +164,8 @@ Each panel is independent and remembers its scroll/expanded sections.
 - Rows: folder icon (open/closed state), type icon, name, visibility eye, lock, overflow menu. There is no separate expand arrow: clicking a folder row toggles it. Double-click a name to rename.
 - Drag handle on hover; row drag reorders within parent and into folders.
 - The panel is wide enough for settings and short enough to leave the canvas visible. Only the layer tree scrolls; layer/object properties remain fixed and fully visible.
-- Active row highlight; multi-select with Shift/Ctrl/Cmd.
+- Active row highlight; Shift+Click selects a range, Ctrl/Cmd+Click toggles layers. Multi-selection shows bulk duplicate, group-into-folder, lock and delete actions.
+- The Layers panel can be resized by dragging its bottom edge.
 - Context menu: rename, duplicate, delete, send to front/back and move out of folder.
 - Footer: total objects/shapes count and performance hint.
 - Mobile: full-height sheet, rows 48 px, swipe actions for hide/lock/delete.
@@ -207,7 +208,7 @@ Each panel is independent and remembers its scroll/expanded sections.
 - Geometry selection: outline + mini menu above bounds (Copy/Cut/Delete).
 - Paste mode: preview follows pointer; action bar shows Confirm/Cancel; arrow keys nudge; Enter/Escape; touch buttons.
 - Context menu anchored to pointer, flips to stay on screen.
-- Locked/hidden objects cannot be selected; selecting from the layer panel scrolls/zooms to the object.
+- Locked/hidden objects cannot be selected; selecting a layer highlights its objects or dungeon geometry on the canvas.
 
 ## 10. Dialogs
 

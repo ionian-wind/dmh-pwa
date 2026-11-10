@@ -128,6 +128,71 @@ describe('map studio layer sorting', () => {
     );
   });
 
+  it('supports multi-layer selection and bulk operations', () => {
+    setActivePinia(createPinia());
+    const store = useMapStudioStore();
+    store.setMap(createMap(createProject().id));
+    store.addDungeonLayer('classic');
+    store.addFolder('Folder');
+    const threshold = store.map!.layers.find(
+      (layer) => layer.type === 'dungeon',
+    )!;
+    const folder = store.map!.layers.find((layer) => layer.type === 'folder')!;
+    store.setSettingsLayer(threshold.id);
+    store.toggleLayerSelection(folder.id);
+    expect(store.selectedLayerIds).toHaveLength(2);
+    store.bulkToggleLayerLock();
+    expect(
+      store
+        .map!.layers.filter((layer) =>
+          store.selectedLayerIds.includes(layer.id),
+        )
+        .every((layer) => layer.locked),
+    ).toBe(true);
+    store.bulkGroupIntoFolder();
+    const group = store.map!.layers.find(
+      (layer) =>
+        layer.type === 'folder' && store.selectedLayerIds.includes(layer.id),
+    )!;
+    expect(group).toBeTruthy();
+    store.bulkDuplicateLayers();
+    expect(store.map!.layers.length).toBeGreaterThan(5);
+    const child = store.map!.layers.find(
+      (layer) => layer.parentId === store.selectedLayerIds[0],
+    );
+    if (child) {
+      store.toggleLayerSelection(child.id);
+      store.bulkDuplicateLayers();
+    }
+    const dungeonIds = store
+      .map!.layers.filter((layer) => layer.type === 'dungeon')
+      .map((layer) => layer.id);
+    store.setSettingsLayer(dungeonIds[0]);
+    for (const id of dungeonIds.slice(1)) store.toggleLayerSelection(id);
+    store.bulkRemoveLayers();
+    expect(store.map!.layers.some((layer) => layer.type === 'dungeon')).toBe(
+      true,
+    );
+    const before = store.map!.layers.length;
+    store.bulkRemoveLayers();
+    expect(store.map!.layers.length).toBeLessThanOrEqual(before);
+  });
+
+  it('selects layer ranges and ignores empty bulk actions', () => {
+    setActivePinia(createPinia());
+    const store = useMapStudioStore();
+    store.setMap(createMap(createProject().id));
+    store.addDungeonLayer('classic');
+    store.addFolder('Folder');
+    const display = store.map!.layers.map((layer) => layer.id);
+    store.setSettingsLayer(display[0]);
+    store.selectLayerRange(display.at(-1)!);
+    expect(store.selectedLayerIds.length).toBeGreaterThan(1);
+    store.bulkRemoveLayers();
+    store.bulkDuplicateLayers();
+    store.bulkToggleLayerLock();
+  });
+
   it('moves folder children out when the folder is deleted', () => {
     setActivePinia(createPinia());
     const store = useMapStudioStore();

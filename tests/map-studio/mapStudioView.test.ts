@@ -577,6 +577,32 @@ describe('MapStudioView UI', () => {
     wrapper.unmount();
   });
 
+  it('shows bulk layer actions and resizes the panel', async () => {
+    const { wrapper, store } = await mountView();
+    const dungeon = store.map!.layers.find(
+      (layer) => layer.type === 'dungeon',
+    )!;
+    const images = store.map!.layers.find((layer) => layer.type === 'images')!;
+    store.setSettingsLayer(dungeon.id);
+    store.toggleLayerSelection(images.id);
+    await flushPromises();
+    expect(wrapper.text()).toContain('2 layers selected');
+    const panel = wrapper.find('.studio-layers');
+    const resize = wrapper.find('.studio-layers-resize');
+    Object.defineProperty(panel.element, 'clientHeight', {
+      configurable: true,
+      value: 400,
+    });
+    resize.element.dispatchEvent(
+      new PointerEvent('pointerdown', { clientY: 400, bubbles: true }),
+    );
+    window.dispatchEvent(new PointerEvent('pointermove', { clientY: 500 }));
+    window.dispatchEvent(new PointerEvent('pointerup'));
+    await flushPromises();
+    expect((panel.element as HTMLElement).style.height).toBe('500px');
+    wrapper.unmount();
+  });
+
   it('activates a dungeon layer when its row is clicked', async () => {
     const { wrapper, store } = await mountView();
     store.addDungeonLayer('classic');

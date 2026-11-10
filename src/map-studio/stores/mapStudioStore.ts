@@ -61,6 +61,7 @@ export const useMapStudioStore = defineStore('mapStudio', () => {
   const maps = shallowRef<StudioMap[]>([]);
   const activeLayerId = ref<string | null>(null);
   const settingsLayerId = ref<string | null>(null);
+  const selectedLayerIds = ref<string[]>([]);
   const selectedObjectId = ref<string | null>(null);
   const selectedShapeId = ref<string | null>(null);
   const selectedObjectIds = ref<string[]>([]);
@@ -167,6 +168,7 @@ export const useMapStudioStore = defineStore('mapStudio', () => {
     activeLayerId.value =
       next.layers.find((layer) => layer.type === 'dungeon')?.id ?? null;
     settingsLayerId.value = activeLayerId.value;
+    selectedLayerIds.value = activeLayerId.value ? [activeLayerId.value] : [];
     if (resetHistory) {
       undoStack.value = [];
       redoStack.value = [];
@@ -396,10 +398,47 @@ export const useMapStudioStore = defineStore('mapStudio', () => {
     });
   }
 
+  function layerDisplayOrder(): string[] {
+    const current = map.value;
+    if (!current) return [];
+    return flattenLayerTree(buildLayerTree(current.layers)).map(
+      (layer) => layer.id,
+    );
+  }
+
+  function applyLayerSelection(
+    ids: string[],
+    primaryId = ids.at(-1) ?? null,
+  ): void {
+    selectedLayerIds.value = [...new Set(ids)];
+    settingsLayerId.value = primaryId;
+    if (primaryId) {
+      const layer = map.value?.layers.find((entry) => entry.id === primaryId);
+      if (layer?.type === 'dungeon') activeLayerId.value = primaryId;
+    }
+  }
+
   function setSettingsLayer(layerId: string): void {
-    settingsLayerId.value = layerId;
-    const layer = map.value?.layers.find((entry) => entry.id === layerId);
-    if (layer?.type === 'dungeon') activeLayerId.value = layerId;
+    applyLayerSelection([layerId], layerId);
+  }
+
+  function toggleLayerSelection(layerId: string): void {
+    const ids = new Set(selectedLayerIds.value);
+    if (ids.has(layerId)) {
+      if (ids.size > 1) ids.delete(layerId);
+    } else {
+      ids.add(layerId);
+    }
+    applyLayerSelection([...ids], layerId);
+  }
+
+  function selectLayerRange(layerId: string): void {
+    const order = layerDisplayOrder();
+    const from = order.indexOf(settingsLayerId.value ?? layerId);
+    const to = order.indexOf(layerId);
+    if (from === -1 || to === -1) return setSettingsLayer(layerId);
+    const [start, end] = from < to ? [from, to] : [to, from];
+    applyLayerSelection(order.slice(start, end + 1), layerId);
   }
 
   function toggleFolder(layerId: string): void {
@@ -512,6 +551,126 @@ export const useMapStudioStore = defineStore('mapStudio', () => {
     const target = siblings[index + direction];
     if (!target) return;
     moveLayerRelative(layerId, target.id, direction < 0 ? 'before' : 'after');
+  }
+
+  function selectedRoots(): StudioLayer[] {
+    const ids = new Set(selectedLayerIds.value);
+    const byId = new Map(
+      (map.value?.layers ?? []).map((layer) => [layer.id, layer]),
+    );
+    return [...ids]
+      .map((id) => byId.get(id))
+      .filter((layer): layer is StudioLayer => !!layer)
+      .filter((layer) => {
+        let parentId = layer.parentId;
+        while (parentId) {
+          if (ids.has(parentId)) return false;
+          parentId = byId.get(parentId)?.parentId ?? null;
+        }
+        return true;
+      });
+  }
+
+  function bulkDuplicateLayers(): void {
+    const current = map.value;
+    if (!current) return;
+    const roots = selectedRoots();
+    if (!roots.length) return;
+    const maxOrder = Math.max(
+      -1,
+      ...current.layers.map((layer) => layer.order),
+    );
+    const copies: StudioLayer[] = [];
+    const newIds: string[] = [];
+    const appendSubtree = (source: StudioLayer, parentId: string | null) => {
+      const copy = {
+        ...(JSON.parse(JSON.stringify(source)) as StudioLayer),
+        id: generateId(),
+        parentId,
+        name: `${source.name} copy`,
+        order: maxOrder + copies.length + 1,
+      };
+      copies.push(copy);
+      newIds.push(copy.id);
+      for (const child of current.layers.filter(
+        (layer) => layer.parentId === source.id,
+      )) {
+        appendSubtree(child, copy.id);
+      }
+    };
+    for (const root of roots) appendSubtree(root, root.parentId);
+    commit({ ...current, layers: [...current.layers, ...copies] });
+    applyLayerSelection(newIds, newIds.at(-1) ?? null);
+  }
+
+  function bulkRemoveLayers(): void {
+    const current = map.value;
+    if (!current) return;
+    const ids = new Set(selectedLayerIds.value);
+    if (!ids.size) return;
+    const removable = current.layers.filter(
+      (layer) =>
+        ids.has(layer.id) &&
+        layer.type !== 'background' &&
+        layer.type !== 'images',
+    );
+    const removableIds = new Set(removable.map((layer) => layer.id));
+    const remainingDungeons = current.layers.filter(
+      (layer) => layer.type === 'dungeon' && !removableIds.has(layer.id),
+    );
+    if (!remainingDungeons.length) {
+      const last = removable.find((layer) => layer.type === 'dungeon');
+      if (last) removableIds.delete(last.id);
+    }
+    const nextLayers = current.layers
+      .filter((layer) => !removableIds.has(layer.id))
+      .map((layer) => {
+        if (!layer.parentId || !removableIds.has(layer.parentId)) return layer;
+        const parent = current.layers.find(
+          (entry) => entry.id === layer.parentId,
+        );
+        return { ...layer, parentId: parent?.parentId ?? null };
+      });
+    commit({ ...current, layers: nextLayers });
+    const fallback = nextLayers.find((layer) => layer.type === 'dungeon');
+    applyLayerSelection(fallback ? [fallback.id] : [], fallback?.id ?? null);
+    activeLayerId.value = fallback?.id ?? null;
+  }
+
+  function bulkToggleLayerLock(): void {
+    const current = map.value;
+    if (!current) return;
+    const ids = new Set(selectedLayerIds.value);
+    if (!ids.size) return;
+    const locked = !current.layers
+      .filter((layer) => ids.has(layer.id))
+      .every((layer) => layer.locked);
+    commit({
+      ...current,
+      layers: current.layers.map((layer) =>
+        ids.has(layer.id) ? { ...layer, locked } : layer,
+      ),
+    });
+  }
+
+  function bulkGroupIntoFolder(): void {
+    const current = map.value;
+    if (!current || selectedLayerIds.value.length < 2) return;
+    const folder = createFolderLayer({
+      name: 'Folder',
+      order: Math.max(-1, ...current.layers.map((layer) => layer.order)) + 1,
+    });
+    const ids = new Set(selectedLayerIds.value);
+    commit({
+      ...current,
+      layers: [
+        ...current.layers.map((layer) =>
+          ids.has(layer.id) ? { ...layer, parentId: folder.id } : layer,
+        ),
+        folder,
+      ],
+    });
+    applyLayerSelection([folder.id], folder.id);
   }
 
   function duplicateLayer(layerId: string): string | null {
@@ -888,7 +1047,10 @@ export const useMapStudioStore = defineStore('mapStudio', () => {
     if (selectedObjectIds.value.length) {
       selectedShapeId.value = null;
       const images = imagesLayer.value;
-      if (images) settingsLayerId.value = images.id;
+      if (images) {
+        settingsLayerId.value = images.id;
+        selectedLayerIds.value = [images.id];
+      }
     }
   }
 
@@ -1621,6 +1783,7 @@ export const useMapStudioStore = defineStore('mapStudio', () => {
     selectedObject,
     selectedObjectIds,
     selectedGroupId,
+    selectedLayerIds,
     geometryClipboard,
     geometryClips,
     selectedObjects,
@@ -1712,6 +1875,12 @@ export const useMapStudioStore = defineStore('mapStudio', () => {
     redo,
     setActiveLayer,
     setSettingsLayer,
+    toggleLayerSelection,
+    selectLayerRange,
+    bulkDuplicateLayers,
+    bulkRemoveLayers,
+    bulkToggleLayerLock,
+    bulkGroupIntoFolder,
     setTool,
     toggleLayerVisibility,
     toggleLayerLock,
