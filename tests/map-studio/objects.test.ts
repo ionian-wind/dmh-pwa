@@ -12,7 +12,12 @@ import {
 describe('map studio objects', () => {
   it('creates and bounds text, doors and stairs', () => {
     const text = createTextObject('Hall', [1, 2], 1);
+    expect(text.shadow.enabled).toBe(false);
     expect(objectBounds(text)).toMatchObject({ x: 1, y: 2 });
+    const long = createTextObject('A very long room label', [1, 2], 2, {
+      fontSize: 0.5,
+    });
+    expect(objectBounds(long).width).toBeGreaterThan(3);
     const door = createDoorObject([0, 0], [1, 0], 2);
     expect(objectBounds(door)).toMatchObject({ x: 0, y: 0, width: 1 });
     const stairs = createStairsObject(

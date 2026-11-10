@@ -15,6 +15,10 @@ import type {
 export interface WallSegment {
   a: Point;
   b: Point;
+  width?: number;
+  dash?: boolean;
+  dashSize?: number;
+  dashOffset?: number;
 }
 
 export interface DungeonLayerGeometry {
@@ -85,6 +89,15 @@ function densifyRing(ring: Pair[], maxStep = 0.5): Pair[] {
     }
   }
   return result;
+}
+
+function roughOpenPath(points: Pair[], level: number, seed: number): Pair[] {
+  if (level <= 0) return points;
+  const amplitude = [0, 0.02, 0.045, 0.08][level] ?? 0;
+  return points.map(([x, y], index) => [
+    x + (hashNoise(seed, index * 2) - 0.5) * amplitude,
+    y + (hashNoise(seed, index * 2 + 1) - 0.5) * amplitude,
+  ]);
 }
 
 function roughRing(ring: Pair[], level: number, seed: number): Pair[] {
@@ -262,11 +275,29 @@ export function compileDungeonLayer(layer: DungeonLayer): DungeonLayerGeometry {
   const extraWalls: WallSegment[] = [];
   for (const shape of layer.shapes) {
     if (shape.shape.kind === 'wall') {
-      for (let index = 0; index + 1 < shape.shape.points.length; index += 1) {
+      const data = shape.shape;
+      const seed = shape.seed ?? hashValue(shape.id);
+      const base = data.smooth
+        ? smoothOpenPath(data.points)
+        : data.points.map(([x, y]) => [x, y] as Pair);
+      const points = roughOpenPath(base, data.rough, seed);
+      const dashPeriod = Math.max(0.1, data.dashSize) * 1.6;
+      let dashPhase = 0;
+      for (let index = 0; index + 1 < points.length; index += 1) {
+        const a: Pair = points[index];
+        const b: Pair = points[index + 1];
         extraWalls.push({
-          a: shape.shape.points[index],
-          b: shape.shape.points[index + 1],
+          a: [a[0], a[1]],
+          b: [b[0], b[1]],
+          width: data.width,
+          dash: data.dash,
+          dashSize: data.dashSize,
+          dashOffset: dashPhase,
         });
+        if (data.dash) {
+          const length = Math.hypot(b[0] - a[0], b[1] - a[1]);
+          dashPhase = (dashPhase + length) % dashPeriod;
+        }
       }
       continue;
     }

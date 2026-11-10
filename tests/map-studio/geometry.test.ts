@@ -405,3 +405,56 @@ describe('map studio smooth paths', () => {
     expect(smoothRing.length).toBeGreaterThan(straightRing.length * 4);
   });
 });
+
+describe('map studio wall annotations', () => {
+  it('carries width, dash and smooth styling into wall segments', () => {
+    const layer = {
+      id: 'layer',
+      type: 'dungeon' as const,
+      name: 'Dungeon',
+      visible: true,
+      locked: false,
+      opacity: 1,
+      blendMode: 'normal' as const,
+      parentId: null,
+      order: 0,
+      style: {
+        floor: { visible: true, color: '#fff' },
+        walls: {
+          visible: true,
+          color: '#000',
+          width: 0.1,
+          blocksLight: true,
+          dash: false,
+        },
+        grid: { visible: false, color: '#000', width: 1 },
+      },
+      shapes: [
+        {
+          id: 'wall',
+          operation: 'add' as const,
+          shape: {
+            kind: 'wall' as const,
+            points: [
+              [0, 0],
+              [4, 0],
+              [4, 4],
+            ],
+            width: 0.25,
+            dash: true,
+            dashSize: 0.6,
+            rough: 0,
+            smooth: true,
+          },
+        },
+      ],
+    };
+    const compiled = compileDungeonLayer(layer);
+    expect(compiled.wallSegments.length).toBeGreaterThan(10);
+    expect(compiled.wallSegments[0]).toMatchObject({
+      width: 0.25,
+      dash: true,
+      dashSize: 0.6,
+    });
+  });
+});

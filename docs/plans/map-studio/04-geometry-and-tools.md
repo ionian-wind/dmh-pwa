@@ -178,13 +178,12 @@ Adjacent rooms: separate adds union; touching edges merge, shared wall disappear
 
 ## 11. Wall tool
 
-- Click points; double-click/Enter finishes. With snap off, click-drag draws unsnapped line.
+- Click points; double-click/Enter finishes. With Snap off, click-drag draws an unsnapped freehand wall.
 - Wall is a stroke annotation, not room fill:
-  - Render as line segments with width, color, dash, smooth, rough.
-  - Optionally participates in “blocks light” and wall export.
+  - Render as styled line segments with width, colour, dash, smooth and rough.
   - Can be drawn inside or outside rooms.
-- Erase mode removes wall annotation segments and can also subtract room geometry? Docs: erasing a wall uses another tool (draw/erase depending on location). Keep wall tool erase limited to wall annotations; room geometry erase via rectangle/path/polygon tools.
-- Dash size in cells; dash pattern scales with export.
+- Settings: width, smooth, post-draw rough, dash and dash size. Dash is applied continuously across the path rather than restarting per segment.
+- Erase a wall by drawing over it with Rectangle/Path/Polygon in draw or erase mode depending on its location; the Wall tool itself is for adding/annotating walls.
 
 ## 12. Select tool (geometry)
 
@@ -192,22 +191,13 @@ Purpose: select/copy/cut/paste areas of dungeon geometry across layers/regions.
 
 Flow:
 
-1. Draw a selection polygon/freehand region (same interactions as polygon).
-2. On finish, compute `selectionPolygon`; collect intersections with each visible/unlocked dungeon layer’s compiled geometry.
-3. Show mini menu above bounds: Copy, Cut, Delete.
-4. Copy: store a `ClipboardGeometry` containing:
-   - layer style snapshots (for paste style)
-   - per-layer polygons clipped to the selection
-   - optional source bounds and transform.
-5. Cut/Delete: dispatch `SubtractGeometry` per affected layer with the selected region? No—Cut must remove only the selected geometry, not everything inside the region? Dungeon Scrawl cut/copy works on the selected area of the drawing. Implement as:
-   - Copy: intersection of layer geometry with selection polygon.
-   - Cut: difference of layer geometry with selection polygon (removes selected area).
-   - Delete: same as cut but no clipboard.
-6. Paste: switch to paste mode with a preview; move/resize/rotate/flip; Enter commits, Escape cancels.
-   - Pressing paste while in erase mode creates subtractive shapes from the clipboard geometry.
-   - Paste target = active layer; paste style defaults to clipboard style or active layer style (toggle in settings).
-7. Clipboard panel stores named/last entries with thumbnails; session clipboard (persist optionally).
-8. Select tool and Object tool are separate: geometry vs objects.
+1. Select tool (`B+8`) draws a selection polygon/freehand region like the polygon tool.
+2. On finish, the region is highlighted and a mini menu appears above it: Copy, Cut, Delete.
+3. Copy stores the intersection of each visible dungeon layer’s compiled geometry as clipboard polygons.
+4. Cut/Delete append a subtractive polygon for the selected region to each dungeon layer, removing the selected area and recalculating shared walls.
+5. `Ctrl/Cmd+V` pastes clipboard polygons into the active dungeon layer with a 0.5-cell offset; erase mode makes the pasted shapes subtractive.
+6. Select and Object tools are separate: geometry vs objects.
+7. Remaining gaps: paste preview with move/resize/rotate before commit, and the named Clipboard sidebar panel.
 
 ## 13. Door tool
 
@@ -231,15 +221,14 @@ Flow:
 
 ## 15. Text tool
 
-- Click to place a text object; immediately enter inline editing overlay (HTML `textarea`/contenteditable positioned over canvas).
-- Type text; Escape/blur/Enter (with Shift for newline) commits; empty text removes the object.
-- Anchor/alignment: object bounds from text metrics; left/center/right alignment inside a width that can be resized.
-- Fonts: built-in web fonts + user-installed local fonts detected via `document.fonts` where available; store family name and fallback.
-- Size in cells (display as pt at 70 ppc); color; shadow; line height.
-- Multi-line, emoji and IME supported by the HTML overlay; Pixi Text renders the committed result.
-- Editing an existing text object by double-click (Object tool) opens the overlay with the caret at the click.
-- Text is exported as part of the raster/PDF; no vector text in UVTT.
-- Mobile: overlay uses the native keyboard and keeps the object visible above the keyboard.
+- Click to place a text object; an inline HTML input overlay opens immediately over the canvas.
+- Type text; Enter or blur commits, Escape cancels. Empty new text is removed.
+- Text objects live in the Images layer.
+- Tool settings: font family, font size, colour, left/centre/right alignment, and drop shadow with colour, X/Y offset and opacity.
+- Snap/Division align the placement point.
+- Object tool: first click selects; double-clicking the text enters inline edit mode; dragging still moves it.
+- Object settings mirror the text style and shadow controls.
+- The committed text is rendered by Pixi with alignment and shadow; the overlay is single-line in the current implementation.
 
 ## 16. Stamp tool
 
@@ -256,23 +245,23 @@ Flow:
 
 Selection:
 
-- Click hit-tests objects in topmost visible/unlocked layers; shift toggles; drag on empty canvas draws a marquee.
-- Handles: 8 resize handles + rotate handle; touch handles are larger and spaced outward.
-- Multi-selection bounding box; mixed types allowed.
-- Double-click text enters edit; double-click image opens asset info; double-click group enters group (optional).
+- Click hit-tests objects in visible image layers; Shift+click adds an object. A selected object is not toggled off from a multi-selection, matching Dungeon Scrawl.
+- Drag on empty canvas draws a marquee; a selected group expands to all of its members.
+- Handles: four corner resize handles plus a rotate handle; touch handles are larger.
+- Multi-selection has one combined bounding box; mixed types are allowed.
+- Double-click text enters inline edit.
+- Clicking outside clears the selection; clicking a grouped member selects the whole group.
 
 Transform:
 
-- Move: drag or arrows; snap translation to grid; hold Alt to disable snap; shift constrains axis.
-- Resize: drag handle; shift preserves aspect; Alt resizes around center; multi-select scales all relative to group bounds.
-- Rotate: drag rotate handle; shift snaps to 15°; display angle label.
-- Group: creates a `GroupObject` with children relative transforms; group transform applies to children. Ungroup bakes group transform into children.
-- Flip: horizontal/vertical around selection center.
-- Z-order: within parent; front/back.
-- Delete, duplicate, copy/paste; paste preview follows pointer and Enter confirms.
-- Locked objects cannot be selected; hidden objects are not hit-tested.
-- Context menu: duplicate, bring front, send back, flip H/V, group/ungroup, delete, lock/unlock.
-- Touch: long-press opens context menu; handles are thumb-friendly; two-finger rotate/scale when an object is selected (optional P3).
+- Move: drag or arrow keys (`0.1` cell, Shift for `1` cell).
+- Resize: drag a corner handle; multi-select scales all objects from the group bounds.
+- Rotate: drag the rotate handle; multi-select rotates around the group centre.
+- Group / ungroup: `G` or the group button in the batch panel; implemented with a shared `groupId` rather than a nested group object.
+- Flip: horizontal/vertical around each object/selection centre.
+- Z-order: `[` sends the selection to the back, `]` brings it to the front; batch panel also has order actions.
+- Delete, duplicate, copy (`Ctrl/Cmd+C`) and paste (`Ctrl/Cmd+V`).
+- Context menu: duplicate, bring to front, send to back, flip horizontal/vertical, delete.
 
 ## 18. Geometry hit testing
 

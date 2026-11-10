@@ -14,6 +14,14 @@ const actions = {
   toggleMode: vi.fn(),
   toggleSnap: vi.fn(),
   setDivision: vi.fn(),
+  copySelection: vi.fn(),
+  cutSelection: vi.fn(),
+  pasteSelection: vi.fn(),
+  groupSelection: vi.fn(),
+  nudgeSelection: vi.fn(),
+  sendToBack: vi.fn(),
+  bringToFront: vi.fn(),
+  hasObjectSelection: () => false,
   getTool: () => 'circle' as const,
 };
 
@@ -51,6 +59,11 @@ describe('map studio hotkeys', () => {
     expect(actions.setTool).toHaveBeenCalledWith('wall');
     press('h');
     expect(actions.setTool).toHaveBeenCalledWith('pan');
+    press('Delete');
+    press('b');
+    press('x');
+    press('S', { shiftKey: true });
+    press('x');
     press(']');
     expect(actions.adjustSides).toHaveBeenCalledWith(1);
     press('[');
@@ -69,6 +82,9 @@ describe('map studio hotkeys', () => {
     press('b');
     press('6');
     expect(actions.setTool).toHaveBeenCalledWith('polygon');
+    press('b');
+    press('8');
+    expect(actions.setTool).toHaveBeenCalledWith('select');
     press('b');
     press('1');
     expect(actions.setTool).toHaveBeenCalledWith('pan');
@@ -100,6 +116,17 @@ describe('map studio hotkey guards', () => {
     expect(actions.setTool).not.toHaveBeenCalled();
     press('r');
     expect(actions.setTool).toHaveBeenCalledWith('rectangle');
+    const noRough = defineComponent({
+      setup() {
+        useStudioHotkeys({ ...actions, cycleRough: undefined });
+        return () => null;
+      },
+    });
+    const roughWrapper = mount(noRough);
+    window.dispatchEvent(
+      new KeyboardEvent('keydown', { key: 'R', shiftKey: true }),
+    );
+    roughWrapper.unmount();
     wrapper.unmount();
   });
 });
@@ -142,6 +169,44 @@ describe('map studio path radius hotkeys', () => {
     expect(adjustRadius).toHaveBeenCalledWith(1);
     window.dispatchEvent(new KeyboardEvent('keydown', { key: '[' }));
     expect(adjustRadius).toHaveBeenCalledWith(-1);
+    wrapper.unmount();
+  });
+});
+
+describe('map studio object hotkeys', () => {
+  it('handles copy, paste, group, nudge and z-order', () => {
+    const HarnessObjects = defineComponent({
+      setup() {
+        useStudioHotkeys({
+          ...actions,
+          hasObjectSelection: () => true,
+        });
+        return () => null;
+      },
+    });
+    const wrapper = mount(HarnessObjects);
+    const press = (key: string, options: KeyboardEventInit = {}) =>
+      window.dispatchEvent(new KeyboardEvent('keydown', { key, ...options }));
+    press('c', { ctrlKey: true });
+    expect(actions.copySelection).toHaveBeenCalled();
+    press('x', { ctrlKey: true });
+    expect(actions.cutSelection).toHaveBeenCalled();
+    press('v', { ctrlKey: true });
+    expect(actions.pasteSelection).toHaveBeenCalled();
+    press('g');
+    expect(actions.groupSelection).toHaveBeenCalled();
+    press('ArrowRight');
+    expect(actions.nudgeSelection).toHaveBeenCalledWith(0.1, 0);
+    press('ArrowLeft');
+    expect(actions.nudgeSelection).toHaveBeenCalledWith(-0.1, 0);
+    press('ArrowUp', { shiftKey: true });
+    expect(actions.nudgeSelection).toHaveBeenCalledWith(0, -1);
+    press('ArrowDown');
+    expect(actions.nudgeSelection).toHaveBeenCalledWith(0, 0.1);
+    press('[');
+    expect(actions.sendToBack).toHaveBeenCalled();
+    press(']');
+    expect(actions.bringToFront).toHaveBeenCalled();
     wrapper.unmount();
   });
 });

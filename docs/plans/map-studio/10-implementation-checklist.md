@@ -50,7 +50,7 @@ Status: **in progress — editor surface, object interactions, shape selection, 
 - [x] Circle / regular polygon tool: sides slider/input, 1 = circle, point/edge orientation, live radius label, `[`/`]` and digit shortcuts
 - [x] Path tool: click points, snap-off freehand, radius and `[`/`]` adjustment, smooth Catmull-Rom paths, post-draw rough strength
 - [x] Polygon tool: click points, double-click/Enter close, click-first-point close, freehand drag when snap is off, smooth curved walls
-- [x] Wall tool (points; dash/smooth still pending)
+- [x] Wall tool: click/freehand points, smooth curves, post-draw rough, dash and dash size, custom width
 - [x] Draw/erase mode, snap/division, corner radius and rough levels
 - [x] Undo/redo for every drawing mutation
 - [x] Classic dungeon preset + basic layer settings
@@ -62,15 +62,15 @@ Status: **in progress — editor surface, object interactions, shape selection, 
 - [x] Explicit add-folder button, per-layer menu (rename, move to root, delete), scrolling layer tree separate from settings
 - [x] Folder rows use `folder-open`/`folder` icons and toggle on row click (no separate chevron)
 - [x] Full layer settings (floor/walls/grid/background)
-- [x] Object tool: selection, live drag, resize/rotate handles for text/images, rotation for doors/stairs, shape selection, marquee and multi-object drag
-- [ ] Grouping, z-order, flip, duplicate, context menu (z-order/flip/duplicate done)
+- [x] Object tool: click/Shift-click selection, marquee, grouped selection, live drag, group resize/rotate, nudge, copy/paste, context menu, z-order
+- [x] Grouping/ungrouping, z-order, flip, duplicate and object context menu
 - [x] Multi-object selection: combined selection bounds, group resize and group rotate
 - [x] Multi-object batch panel: common opacity/rotation/type fields and batch duplicate, z-order, flip and delete actions
 - [ ] Images panel, upload, drag/drop, favorites
-- [x] Text tool: click + prompt placement (inline editing pending)
+- [x] Text tool: click-to-place inline editing, second-click edit, font/size/colour/alignment, drop shadow, object settings
 - [x] Door tool: two-point placement (variants pending)
 - [x] Stairs tool: three-point placement (style editing pending)
-- [ ] Geometry select tool, copy/cut/paste, clipboard (shape selection done)
+- [x] Geometry select tool: region select, mini menu, copy/cut/delete, paste (preview transform and Clipboard panel pending)
 - [x] Local library, autosave, multiple maps (crash recovery pending)
 - [ ] `.ds` import/export baseline
 
@@ -126,3 +126,7 @@ Status: **in progress — editor surface, object interactions, shape selection, 
 | 2026-11-10 | Rectangle tool parity        | Add rounded drag preview, B+3/B+4/B+5/B+6/B+7/B+9/B+0/B+- shortcuts, E/S/Shift+S shortcuts, and post-draw rough strength for rectangle/circle/polygon (2069 tests / 248 files; coverage branches 87.02%)                                                      |
 | 2026-11-10 | Path tool parity             | Add snap-off freehand paths, smooth Catmull-Rom expansion, radius bracket shortcuts, centreline preview and post-draw rough strength (2069 tests / 248 files; coverage branches 87.02%)                                                                       |
 | 2026-11-10 | Pan and zoom parity          | Add B+1 pan, Space+drag temporary pan, middle-mouse pan confirmation, and `=`/`+`/`-` keyboard zoom (2071 tests / 248 files; coverage branches 87.04%)                                                                                                        |
+| 2026-11-10 | Text tool validation         | Add inline placement/edit overlay, text tool style settings (font, size, colour, alignment, shadow), rendered alignment/shadow, and text bounds from content (2071 tests / 248 files; coverage branches 87.04%)                                               |
+| 2026-11-10 | Object tool validation       | Add Shift-click multi-select, groups (`G`), arrow nudging, copy/paste, `[`/`]` z-order and a right-click object context menu (2075 tests / 248 files; coverage branches 87.02%)                                                                               |
+| 2026-11-10 | Select tool validation       | Add separate Select tool with polygon/freehand regions, selection mini menu, geometry clipboard copy/cut/delete and draw/erase paste (2083 tests / 248 files; coverage branches 87.02%)                                                                       |
+| 2026-11-10 | Wall tool validation         | Add snap-off freehand walls, smooth curves, post-draw rough, dashed strokes with continuous dash phase, and width/dash tool settings (2083 tests / 248 files; coverage branches 87.02%)                                                                       |

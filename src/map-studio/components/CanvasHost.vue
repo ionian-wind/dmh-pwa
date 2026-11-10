@@ -24,6 +24,11 @@ import type {
 
 const { t } = useI18n();
 const radiusLabel = ref<{ x: number; y: number; text: string } | null>(null);
+const groupButton = ref<{ x: number; y: number; grouped: boolean } | null>(
+  null,
+);
+const geometrySelection = ref<Point[]>([]);
+const geometryMenu = ref<{ x: number; y: number } | null>(null);
 
 const props = defineProps<{
   map: StudioMap;
@@ -49,6 +54,16 @@ const emit = defineEmits<{
   (event: 'select', id: string | null): void;
   (event: 'selectShape', id: string | null): void;
   (event: 'selectMany', ids: string[]): void;
+  (event: 'toggleSelect', id: string): void;
+  (event: 'groupSelection'): void;
+  (event: 'selectRegion', points: Point[]): void;
+  (event: 'copyGeometry', points: Point[]): void;
+  (event: 'cutGeometry', points: Point[]): void;
+  (event: 'deleteGeometry', points: Point[]): void;
+  (
+    event: 'contextMenu',
+    payload: { x: number; y: number; objectId: string | null },
+  ): void;
   (event: 'moveObject', delta: { dx: number; dy: number }): void;
   (event: 'beginObjectDrag'): void;
   (event: 'moveObjectLive', delta: { dx: number; dy: number }): void;
@@ -81,9 +96,16 @@ let drag:
       points: Point[];
       lastScreen: Point;
       path?: boolean;
+      wall?: boolean;
     }
   | { kind: 'rough'; shape: DungeonShape; startScreen: Point }
-  | { kind: 'object'; id: string; start: Point; last: Point }
+  | {
+      kind: 'object';
+      id: string;
+      start: Point;
+      last: Point;
+      editTextId?: string;
+    }
   | { kind: 'marquee'; start: Point }
   | {
       kind: 'resize';
@@ -146,6 +168,10 @@ function roughLevel(distance: number): Roughness {
 }
 
 function roughPreview(shape: DungeonShape, level: Roughness): void {
+  if (shape.shape.kind === 'wall') {
+    renderer.value?.setPreview({ kind: 'line', points: shape.shape.points });
+    return;
+  }
   const preview = shapeToPolygon({
     ...shape,
     shape: { ...shape.shape, rough: level },
@@ -189,6 +215,11 @@ function commitShape(shape: DungeonShape): void {
   } else if (data.kind === 'path') {
     emit(
       'path',
+      data.points.map(([x, y]) => [x, y] as [number, number]),
+    );
+  } else if (data.kind === 'wall') {
+    emit(
+      'wall',
       data.points.map(([x, y]) => [x, y] as [number, number]),
     );
   }
@@ -286,8 +317,18 @@ function onPointerDown(event: PointerEvent): void {
       point,
     );
     const selectedIds = props.selectedObjectIds ?? [];
+    if (object && event.shiftKey) {
+      emit('toggleSelect', object.id);
+      return;
+    }
     if (object && selectedIds.includes(object.id)) {
-      drag = { kind: 'object', id: object.id, start: point, last: point };
+      drag = {
+        kind: 'object',
+        id: object.id,
+        start: point,
+        last: point,
+        ...(object.type === 'text' ? { editTextId: object.id } : {}),
+      };
       emit('beginObjectDrag');
       return;
     }
@@ -346,7 +387,7 @@ function onPointerDown(event: PointerEvent): void {
     }
     return;
   }
-  if (['polygon', 'path', 'wall'].includes(props.tool)) {
+  if (['select', 'polygon', 'path', 'wall'].includes(props.tool)) {
     const point = renderer.value.screenToWorld(sx, sy);
     if (props.tool === 'polygon' && polygonPoints.value.length >= 3) {
       const vp = renderer.value.getViewport();
@@ -359,7 +400,10 @@ function onPointerDown(event: PointerEvent): void {
       }
     }
     if (
-      (props.tool === 'polygon' || props.tool === 'path') &&
+      (props.tool === 'polygon' ||
+        props.tool === 'path' ||
+        props.tool === 'wall' ||
+        props.tool === 'select') &&
       !props.settings.snap
     ) {
       const freehand: Point[] = [[point[0], point[1]]];
@@ -368,9 +412,10 @@ function onPointerDown(event: PointerEvent): void {
         points: freehand,
         lastScreen: [sx, sy],
         path: props.tool === 'path',
+        wall: props.tool === 'wall',
       };
       renderer.value.setPreview(
-        props.tool === 'path'
+        props.tool === 'path' || props.tool === 'wall'
           ? { kind: 'line', points: freehand }
           : { kind: 'polygon', points: freehand },
       );
@@ -381,9 +426,9 @@ function onPointerDown(event: PointerEvent): void {
       [snap(point[0]), snap(point[1])],
     ];
     renderer.value.setPreview(
-      props.tool === 'polygon'
-        ? { kind: 'polygon', points: polygonPoints.value }
-        : { kind: 'line', points: polygonPoints.value },
+      props.tool === 'path' || props.tool === 'wall'
+        ? { kind: 'line', points: polygonPoints.value }
+        : { kind: 'polygon', points: polygonPoints.value },
     );
     return;
   }
@@ -412,6 +457,7 @@ function onPointerMove(event: PointerEvent): void {
       x: drag.viewport.x + sx - drag.startX,
       y: drag.viewport.y + sy - drag.startY,
     });
+    updateSelection();
     return;
   }
   if (drag.kind === 'rough') {
@@ -430,7 +476,7 @@ function onPointerMove(event: PointerEvent): void {
     drag.points.push([point[0], point[1]]);
     drag.lastScreen = [sx, sy];
     renderer.value.setPreview(
-      drag.path
+      drag.path || drag.wall
         ? { kind: 'line', points: drag.points }
         : { kind: 'polygon', points: drag.points },
     );
@@ -564,7 +610,7 @@ function onPointerMove(event: PointerEvent): void {
 function onPointerMovePolygon(event: PointerEvent): void {
   if (
     !renderer.value ||
-    !['polygon', 'path', 'wall'].includes(props.tool) ||
+    !['select', 'polygon', 'path', 'wall'].includes(props.tool) ||
     drag
   )
     return;
@@ -576,9 +622,9 @@ function onPointerMovePolygon(event: PointerEvent): void {
     [snap(current[0]), snap(current[1])] as Point,
   ];
   renderer.value.setPreview(
-    props.tool === 'polygon'
-      ? { kind: 'polygon', points: previewPoints }
-      : { kind: 'line', points: previewPoints },
+    props.tool === 'path' || props.tool === 'wall'
+      ? { kind: 'line', points: previewPoints }
+      : { kind: 'polygon', points: previewPoints },
   );
 }
 
@@ -599,7 +645,7 @@ function onPointerUp(event: PointerEvent): void {
     const current = renderer.value.screenToWorld(sx, sy);
     drag.points.push([current[0], current[1]]);
     const points = drag.points.map(([x, y]) => [x, y] as [number, number]);
-    const minimum = drag.path ? 2 : 3;
+    const minimum = drag.path || drag.wall ? 2 : 3;
     if (points.length >= minimum) {
       const shape = {
         id: roughShapeId(),
@@ -613,12 +659,22 @@ function onPointerUp(event: PointerEvent): void {
               rough: 0,
               smooth: props.settings.smooth,
             }
-          : {
-              kind: 'polygon',
-              points,
-              rough: 0,
-              smooth: props.settings.smooth,
-            },
+          : drag.wall
+            ? {
+                kind: 'wall',
+                points,
+                width: props.settings.wallWidth,
+                dash: props.settings.wallDash,
+                dashSize: props.settings.wallDashSize,
+                rough: 0,
+                smooth: props.settings.smooth,
+              }
+            : {
+                kind: 'polygon',
+                points,
+                rough: 0,
+                smooth: props.settings.smooth,
+              },
       } as DungeonShape;
       if (beginRough(shape, sx, sy)) return;
       renderer.value.setPreview(null);
@@ -656,8 +712,15 @@ function onPointerUp(event: PointerEvent): void {
     drag.kind === 'resize' ||
     drag.kind === 'rotate'
   ) {
+    const clickEdit =
+      drag.kind === 'object' &&
+      drag.editTextId &&
+      Math.hypot(drag.last[0] - drag.start[0], drag.last[1] - drag.start[1]) <
+        0.08;
+    const editTextId = drag.kind === 'object' ? drag.editTextId : undefined;
     emit('endObjectDrag');
     drag = null;
+    if (clickEdit && editTextId) emit('editText', editTextId);
     return;
   }
   if (drag.kind === 'circle') {
@@ -719,6 +782,12 @@ function onPointerUp(event: PointerEvent): void {
   drag = null;
 }
 
+function clearGeometrySelection(): void {
+  geometrySelection.value = [];
+  geometryMenu.value = null;
+  renderer.value?.setGeometrySelection(null);
+}
+
 function finishPolygon(): void {
   if (!renderer.value) return;
   const points = polygonPoints.value.map(
@@ -726,6 +795,19 @@ function finishPolygon(): void {
   );
   polygonPoints.value = [];
   renderer.value.setPreview(null);
+  if (props.tool === 'select' && points.length >= 3) {
+    geometrySelection.value = points;
+    renderer.value.setGeometrySelection(points);
+    const xs = points.map(([x]) => x);
+    const ys = points.map(([, y]) => y);
+    const vp = renderer.value.getViewport();
+    geometryMenu.value = {
+      x: ((Math.min(...xs) + Math.max(...xs)) / 2) * 70 * vp.zoom + vp.x,
+      y: Math.min(...ys) * 70 * vp.zoom + vp.y - 34,
+    };
+    emit('selectRegion', points);
+    return;
+  }
   if (props.tool === 'path' && points.length >= 2) {
     const shape: DungeonShape = {
       id: roughShapeId(),
@@ -751,8 +833,33 @@ function finishPolygon(): void {
       return;
     }
     commitShape(shape);
-  } else if (props.tool === 'wall' && points.length >= 2) emit('wall', points);
-  else if (points.length >= 3) {
+  } else if (props.tool === 'wall' && points.length >= 2) {
+    const shape: DungeonShape = {
+      id: roughShapeId(),
+      operation: 'add',
+      shape: {
+        kind: 'wall',
+        points,
+        width: props.settings.wallWidth,
+        dash: props.settings.wallDash,
+        dashSize: props.settings.wallDashSize,
+        rough: 0,
+        smooth: props.settings.smooth,
+      },
+    };
+    const last = points.at(-1) ?? [0, 0];
+    const vp = renderer.value.getViewport();
+    if (
+      beginRough(
+        shape,
+        last[0] * 70 * vp.zoom + vp.x,
+        last[1] * 70 * vp.zoom + vp.y,
+      )
+    ) {
+      return;
+    }
+    commitShape(shape);
+  } else if (points.length >= 3) {
     const shape: DungeonShape = {
       id: roughShapeId(),
       operation: 'add',
@@ -779,7 +886,7 @@ function finishPolygon(): void {
 }
 
 function onDoubleClick(event: MouseEvent): void {
-  if (['polygon', 'path', 'wall'].includes(props.tool)) {
+  if (['select', 'polygon', 'path', 'wall'].includes(props.tool)) {
     finishPolygon();
     return;
   }
@@ -799,6 +906,7 @@ function onDoubleClick(event: MouseEvent): void {
 function cancelGesture(): void {
   drag = null;
   polygonPoints.value = [];
+  clearGeometrySelection();
   doorPoints.value = [];
   stairPoints.value = [];
   renderer.value?.setPreview(null);
@@ -889,10 +997,21 @@ function onWheel(event: WheelEvent): void {
     x: sx - (sx - viewport.x) * ratio,
     y: sy - (sy - viewport.y) * ratio,
   });
+  updateSelection();
 }
 
 function onContextMenu(event: MouseEvent): void {
   event.preventDefault();
+  if (!renderer.value) return;
+  const [sx, sy] = localPoint(event);
+  const point = renderer.value.screenToWorld(sx, sy);
+  const object = hitTestObject(
+    props.map.layers
+      .filter((layer) => layer.type === 'images' && layer.visible)
+      .flatMap((layer) => (layer.type === 'images' ? layer.objects : [])),
+    point,
+  );
+  emit('contextMenu', { x: sx, y: sy, objectId: object?.id ?? null });
 }
 
 onMounted(async () => {
@@ -924,12 +1043,34 @@ watch(
 
 function updateSelection(): void {
   renderer.value?.setShapeSelection(props.selectedShape ?? null);
-  renderer.value?.setSelection(unionBounds(selectedObjects()));
+  const objects = selectedObjects();
+  const bounds = unionBounds(objects);
+  renderer.value?.setSelection(bounds);
+  if (objects.length > 1 && bounds && renderer.value) {
+    const vp = renderer.value.getViewport();
+    const groupId = objects[0].groupId ?? null;
+    groupButton.value = {
+      x: (bounds.x + bounds.width / 2) * 70 * vp.zoom + vp.x,
+      y: bounds.y * 70 * vp.zoom + vp.y - 34,
+      grouped:
+        !!groupId && objects.every((object) => object.groupId === groupId),
+    };
+  } else {
+    groupButton.value = null;
+  }
 }
 
+watch(
+  () => props.tool,
+  (tool) => {
+    if (tool !== 'select') clearGeometrySelection();
+  },
+);
 watch(() => props.selectedObjectId, updateSelection);
 watch(() => props.selectedObjectIds, updateSelection, { deep: true });
 watch(() => props.selectedShape, updateSelection);
+
+defineExpose({ clearGeometrySelection });
 
 onBeforeUnmount(() => {
   resizeObserver?.disconnect();
@@ -962,6 +1103,53 @@ onBeforeUnmount(() => {
     >
       {{ radiusLabel.text }}
     </div>
+    <div
+      v-if="geometryMenu"
+      class="studio-geometry-menu"
+      :style="{ left: `${geometryMenu.x}px`, top: `${geometryMenu.y}px` }"
+      @pointerdown.stop
+    >
+      <button
+        type="button"
+        @click="
+          emit('copyGeometry', geometrySelection);
+          geometryMenu = null;
+        "
+      >
+        {{ t('common.copy') }}
+      </button>
+      <button
+        type="button"
+        @click="
+          emit('cutGeometry', geometrySelection);
+          clearGeometrySelection();
+        "
+      >
+        {{ t('common.cut') }}
+      </button>
+      <button
+        type="button"
+        @click="
+          emit('deleteGeometry', geometrySelection);
+          clearGeometrySelection();
+        "
+      >
+        {{ t('common.delete') }}
+      </button>
+    </div>
+    <button
+      v-if="groupButton"
+      type="button"
+      class="studio-group-tooltip"
+      :style="{
+        left: `${groupButton.x}px`,
+        top: `${groupButton.y}px`,
+      }"
+      @pointerdown.stop
+      @click.stop="emit('groupSelection')"
+    >
+      {{ groupButton.grouped ? t('mapStudio.ungroup') : t('mapStudio.group') }}
+    </button>
   </div>
 </template>
 
@@ -972,6 +1160,45 @@ onBeforeUnmount(() => {
   overflow: hidden;
   touch-action: none;
   cursor: crosshair;
+}
+.studio-group-tooltip {
+  position: absolute;
+  z-index: 3;
+  padding: 3px 8px;
+  font-size: 11px;
+  font-weight: 600;
+  color: #fff;
+  cursor: pointer;
+  background: var(--q-primary);
+  border: 0;
+  border-radius: 4px;
+  box-shadow: 0 2px 8px rgb(0 0 0 / 20%);
+  transform: translateX(-50%);
+}
+.studio-geometry-menu {
+  position: absolute;
+  z-index: 4;
+  display: flex;
+  gap: 2px;
+  padding: 3px;
+  background: var(--color-background);
+  border: 1px solid var(--color-border-light);
+  border-radius: 5px;
+  box-shadow: 0 4px 14px rgb(0 0 0 / 18%);
+  transform: translateX(-50%);
+}
+.studio-geometry-menu button {
+  padding: 4px 8px;
+  font: inherit;
+  font-size: 11px;
+  color: inherit;
+  cursor: pointer;
+  background: none;
+  border: 0;
+  border-radius: 3px;
+}
+.studio-geometry-menu button:hover {
+  background: var(--color-selected-surface);
 }
 .studio-radius-label {
   position: absolute;

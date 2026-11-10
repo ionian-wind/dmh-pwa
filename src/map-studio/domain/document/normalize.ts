@@ -136,6 +136,7 @@ function normalizeShape(value: unknown): DungeonShape | null {
         points,
         width,
         dash: data.dash === true,
+        dashSize: Math.max(0.05, number(data.dashSize, 0.4)),
         rough: ([0, 1, 2, 3] as const).includes(data.rough) ? data.rough : 0,
         smooth: data.smooth === true,
       },
@@ -172,6 +173,9 @@ function normalizeObject(value: unknown): StudioObject | null {
     visible: object.visible !== false,
     locked: object.locked === true,
     opacity: clamp(number(object.opacity, 1), 0, 1),
+    ...(typeof object.groupId === 'string' && object.groupId
+      ? { groupId: object.groupId }
+      : {}),
     blendMode: ['normal', 'add', 'multiply', 'screen'].includes(
       String(object.blendMode),
     )
@@ -208,6 +212,16 @@ function normalizeObject(value: unknown): StudioObject | null {
       align: ['left', 'center', 'right'].includes(String(object.align))
         ? object.align
         : 'left',
+      shadow: {
+        enabled: object.shadow?.enabled === true,
+        color:
+          typeof object.shadow?.color === 'string'
+            ? object.shadow.color
+            : '#000000',
+        offsetX: number(object.shadow?.offsetX, 0.04),
+        offsetY: number(object.shadow?.offsetY, 0.04),
+        opacity: Math.max(0, Math.min(1, number(object.shadow?.opacity, 0.5))),
+      },
       transform,
     };
   }

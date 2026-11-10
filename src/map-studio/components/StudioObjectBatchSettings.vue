@@ -73,6 +73,18 @@ function setTypeProperty(key: string, value: unknown): void {
           flat
           dense
           round
+          icon="tabler-users-group"
+          :title="
+            store.selectedGroupId
+              ? t('mapStudio.ungroup')
+              : t('mapStudio.group')
+          "
+          @click="store.toggleGroupSelection()"
+        />
+        <QBtn
+          flat
+          dense
+          round
           icon="tabler-copy"
           :title="t('mapStudio.duplicate')"
           @click="store.duplicateSelectedObjects()"

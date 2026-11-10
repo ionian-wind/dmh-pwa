@@ -165,6 +165,19 @@ describe('StudioObjectBatchSettings', () => {
     wrapper.unmount();
   });
 
+  it('groups and ungroups the selection', async () => {
+    const { store, pinia } = setup();
+    store.addText('A', [1, 1]);
+    store.addText('B', [3, 3]);
+    store.selectObjects(store.imagesLayer!.objects.map((object) => object.id));
+    const wrapper = mountBatch(pinia);
+    await wrapper.find('[title="Group"]').trigger('click');
+    expect(store.selectedGroupId).toBeTruthy();
+    await wrapper.find('[title="Ungroup"]').trigger('click');
+    expect(store.selectedGroupId).toBeNull();
+    wrapper.unmount();
+  });
+
   it('hides type-specific fields for a mixed selection', async () => {
     const { store, pinia } = setup();
     store.addText('A', [1, 1]);

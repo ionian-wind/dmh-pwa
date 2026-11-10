@@ -49,16 +49,30 @@ export function createTextObject(
   text: string,
   point: Point,
   order: number,
+  style: Partial<{
+    fontFamily: string;
+    fontSize: number;
+    color: string;
+    align: 'left' | 'center' | 'right';
+    shadow: TextObject['shadow'];
+  }> = {},
 ): TextObject {
-  const fontSize = 0.32;
+  const fontSize = style.fontSize ?? 0.32;
   return {
     ...base(order),
     type: 'text',
     text,
-    fontFamily: 'Georgia, serif',
+    fontFamily: style.fontFamily ?? 'Georgia, serif',
     fontSize,
-    color: '#1f2933',
-    align: 'left',
+    color: style.color ?? '#1f2933',
+    align: style.align ?? 'left',
+    shadow: style.shadow ?? {
+      enabled: false,
+      color: '#000000',
+      offsetX: 0.04,
+      offsetY: 0.04,
+      opacity: 0.5,
+    },
     transform: createTransform(point[0], point[1], 3, fontSize * 1.4),
   };
 }
@@ -121,9 +135,8 @@ export function createStairsObject(
 
 export function objectBounds(object: StudioObject): Bounds {
   if (object.type === 'text') {
-    const width =
-      object.transform.width ||
-      Math.max(0.5, object.text.length * object.fontSize * 0.6);
+    const measured = Math.max(0.5, object.text.length * object.fontSize * 0.6);
+    const width = Math.max(object.transform.width || 0, measured);
     return {
       x: object.transform.x,
       y: object.transform.y,

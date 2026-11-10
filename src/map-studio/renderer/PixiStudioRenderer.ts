@@ -54,6 +54,7 @@ export class PixiStudioRenderer {
   private objectsContainer = new Container();
   private selectionLayer = new Graphics();
   private shapeSelectionLayer = new Graphics();
+  private geometrySelectionLayer = new Graphics();
   private previewLayer = new Graphics();
   private map: StudioMap | null = null;
   private imageTextures = new Map<string, Texture>();
@@ -86,6 +87,7 @@ export class PixiStudioRenderer {
       this.dungeonContainer,
       this.objectsContainer,
       this.shapeSelectionLayer,
+      this.geometrySelectionLayer,
       this.selectionLayer,
       this.previewLayer,
     );
@@ -221,6 +223,21 @@ export class PixiStudioRenderer {
             .stroke({ color: '#2d6fb3', width: 3 });
         }
       }
+    }
+    this.render();
+  }
+
+  setGeometrySelection(points: Point[] | null): void {
+    this.geometrySelectionLayer.clear();
+    if (points && points.length >= 3) {
+      const flat = points.flatMap(([x, y]) => [
+        x * BASE_PIXELS_PER_CELL,
+        y * BASE_PIXELS_PER_CELL,
+      ]);
+      this.geometrySelectionLayer
+        .poly(flat)
+        .fill({ color: '#4a90d9', alpha: 0.12 })
+        .stroke({ color: '#2d6fb3', width: 2, alpha: 0.9 });
     }
     this.render();
   }
@@ -490,15 +507,35 @@ export class PixiStudioRenderer {
     if (!context) return new Sprite(Texture.WHITE);
     context.font = `${fontSize * resolution}px ${object.fontFamily}`;
     const metrics = context.measureText(object.text);
-    const width = Math.max(1, Math.ceil(metrics.width) + 4 * resolution);
+    const textWidth = metrics.width / resolution;
+    const boxWidth = Math.max(1, object.transform.width * ppc);
+    const cssWidth = Math.max(textWidth + 8, boxWidth);
+    const width = Math.max(1, Math.ceil(cssWidth * resolution));
     const height = Math.ceil(fontSize * 1.4 * resolution);
     canvas.width = width;
     canvas.height = height;
     context.scale(resolution, resolution);
     context.font = `${fontSize}px ${object.fontFamily}`;
-    context.fillStyle = object.color;
     context.textBaseline = 'top';
-    context.fillText(object.text, 0, 0);
+    const x =
+      object.align === 'center'
+        ? (cssWidth - textWidth) / 2
+        : object.align === 'right'
+          ? cssWidth - textWidth - 2
+          : 2;
+    if (object.shadow.enabled) {
+      context.save();
+      context.globalAlpha = object.shadow.opacity;
+      context.fillStyle = object.shadow.color;
+      context.fillText(
+        object.text,
+        x + object.shadow.offsetX * ppc,
+        object.shadow.offsetY * ppc,
+      );
+      context.restore();
+    }
+    context.fillStyle = object.color;
+    context.fillText(object.text, x, 0);
     const sprite = new Sprite(Texture.from(canvas));
     sprite.scale.set(1 / resolution);
     return sprite;
@@ -520,14 +557,38 @@ export class PixiStudioRenderer {
 
     if (layer.style.walls.visible) {
       for (const segment of compiled.wallSegments) {
-        graphics
-          .moveTo(segment.a[0] * ppc, segment.a[1] * ppc)
-          .lineTo(segment.b[0] * ppc, segment.b[1] * ppc)
-          .stroke({
-            color: layer.style.walls.color,
-            width: Math.max(1, layer.style.walls.width * ppc),
-            alpha: 1,
-          });
+        const ax = segment.a[0] * ppc;
+        const ay = segment.a[1] * ppc;
+        const bx = segment.b[0] * ppc;
+        const by = segment.b[1] * ppc;
+        const width = Math.max(
+          1,
+          (segment.width ?? layer.style.walls.width) * ppc,
+        );
+        const color = layer.style.walls.color;
+        if (segment.dash) {
+          const length = Math.hypot(bx - ax, by - ay);
+          const dash = Math.max(2, (segment.dashSize ?? 0.4) * ppc);
+          const gap = Math.max(1, dash * 0.6);
+          const period = dash + gap;
+          const phase = -((segment.dashOffset ?? 0) * ppc) % period;
+          for (let offset = phase; offset < length; offset += period) {
+            const start = Math.max(0, offset);
+            const end = Math.min(length, offset + dash);
+            if (end <= start) continue;
+            const from = start / Math.max(1, length);
+            const to = end / Math.max(1, length);
+            graphics
+              .moveTo(ax + (bx - ax) * from, ay + (by - ay) * from)
+              .lineTo(ax + (bx - ax) * to, ay + (by - ay) * to)
+              .stroke({ color, width, alpha: 1 });
+          }
+        } else {
+          graphics
+            .moveTo(ax, ay)
+            .lineTo(bx, by)
+            .stroke({ color, width, alpha: 1 });
+        }
       }
     }
     this.dungeonContainer.addChild(graphics);

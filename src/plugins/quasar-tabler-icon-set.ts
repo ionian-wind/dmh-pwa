@@ -81,6 +81,8 @@ import svgEyeOff from '@tabler/icons/outline/eye-off.svg?raw';
 import svgFileDownload from '@tabler/icons/outline/file-download.svg?raw';
 import svgFlag from '@tabler/icons/outline/flag.svg?raw';
 import svgFolder from '@tabler/icons/outline/folder.svg?raw';
+import svgLassoPolygon from '@tabler/icons/outline/lasso-polygon.svg?raw';
+import svgUsersGroup from '@tabler/icons/outline/users-group.svg?raw';
 import svgFolderPlus from '@tabler/icons/outline/folder-plus.svg?raw';
 import svgFolderOpen from '@tabler/icons/outline/folder-open.svg?raw';
 import svgCornerUpLeft from '@tabler/icons/outline/corner-up-left.svg?raw';
@@ -251,6 +253,8 @@ const icons: Record<string, string> = {
   'file-download': svgPath(svgFileDownload),
   flag: svgPath(svgFlag),
   folder: svgPath(svgFolder),
+  'lasso-polygon': svgPath(svgLassoPolygon),
+  'users-group': svgPath(svgUsersGroup),
   'folder-plus': svgPath(svgFolderPlus),
   'folder-open': svgPath(svgFolderOpen),
   'corner-up-left': svgPath(svgCornerUpLeft),

@@ -184,4 +184,50 @@ describe('StudioObjectSettings', () => {
     expect(store.imagesLayer!.objects[0].transform.x).toBe(4);
     wrapper.unmount();
   });
+
+  it('edits text style and shadow settings', async () => {
+    const pinia = createPinia();
+    setActivePinia(pinia);
+    const store = useMapStudioStore();
+    store.setMap(createMap(createProject().id));
+    store.addText('Label', [1, 1]);
+    const object = store.imagesLayer!.objects[0];
+    store.selectObject(object.id);
+    const wrapper = mount(StudioObjectSettings, {
+      global: { plugins: [pinia] },
+    });
+    const selects = wrapper.findAll('select');
+    await selects[0].setValue('Arial, sans-serif');
+    await selects[1].setValue('center');
+    const shadowToggle = wrapper
+      .findAll('input[type="checkbox"]')
+      .find((input) =>
+        input.element.closest('label')?.textContent?.includes('Drop shadow'),
+      )!;
+    await shadowToggle.setValue(true);
+    expect(
+      store.imagesLayer!.objects[0].type === 'text' &&
+        store.imagesLayer!.objects[0].shadow.enabled,
+    ).toBe(true);
+    const colorInputs = wrapper.findAll('input[type="color"]');
+    await colorInputs.at(-1)!.setValue('#abcdef');
+    const fieldInput = (label: string) =>
+      wrapper
+        .findAll('label')
+        .find((entry) => entry.text().includes(label))!
+        .find('input[type="number"]');
+    await fieldInput('Offset X').setValue('0.1');
+    await fieldInput('Offset Y').setValue('0.2');
+    await fieldInput('Shadow opacity').setValue('0.7');
+    expect(
+      store.imagesLayer!.objects[0].type === 'text' &&
+        store.imagesLayer!.objects[0].shadow,
+    ).toMatchObject({
+      color: '#abcdef',
+      offsetX: 0.1,
+      offsetY: 0.2,
+      opacity: 0.7,
+    });
+    wrapper.unmount();
+  });
 });

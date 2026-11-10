@@ -1,4 +1,5 @@
 import { defineStore } from 'pinia';
+import { intersection, type Polygon } from 'polygon-clipping';
 import { computed, ref, shallowRef } from 'vue';
 import { generateId } from '@/utils/storage';
 import type {
@@ -7,6 +8,7 @@ import type {
   DungeonLayerStyle,
   ImagesLayer,
   StudioLayer,
+  Point,
   StudioObject,
   StudioMap,
   StudioProject,
@@ -18,6 +20,7 @@ import {
   createFolderLayer,
 } from '@/map-studio/domain/document/factories';
 import { getDungeonPreset } from '@/map-studio/domain/presets';
+import { compileDungeonLayer } from '@/map-studio/domain/geometry/compile';
 import {
   reorderLayers,
   type LayerDropPlacement,
@@ -65,9 +68,24 @@ export const useMapStudioStore = defineStore('mapStudio', () => {
     roughMode: false,
     pathRadius: 0.25,
     wallWidth: 0.08,
+    wallDash: false,
+    wallDashSize: 0.4,
     sides: 1,
     drawTo: 'point',
     smooth: false,
+    text: {
+      fontFamily: 'Georgia, serif',
+      fontSize: 0.32,
+      color: '#1f2933',
+      align: 'left',
+      shadow: {
+        enabled: false,
+        color: '#000000',
+        offsetX: 0.04,
+        offsetY: 0.04,
+        opacity: 0.5,
+      },
+    },
   });
   const undoStack = shallowRef<StudioMap[]>([]);
   const redoStack = shallowRef<StudioMap[]>([]);
@@ -296,9 +314,10 @@ export const useMapStudioStore = defineStore('mapStudio', () => {
         kind: 'wall',
         points,
         width: toolSettings.value.wallWidth,
-        dash: false,
+        dash: toolSettings.value.wallDash,
+        dashSize: toolSettings.value.wallDashSize,
         rough: toolSettings.value.rough,
-        smooth: false,
+        smooth: toolSettings.value.smooth,
       },
     });
   }
@@ -490,6 +509,89 @@ export const useMapStudioStore = defineStore('mapStudio', () => {
     });
   }
 
+  function closedRegion(points: Point[]): Polygon {
+    const ring = points.map(([x, y]) => [x, y] as [number, number]);
+    ring.push([...ring[0]]);
+    return [ring];
+  }
+
+  function copyGeometrySelection(points: Point[]): void {
+    const current = map.value;
+    if (!current || points.length < 3) return;
+    const region = closedRegion(points);
+    const rings: Point[][] = [];
+    for (const layer of current.layers) {
+      if (layer.type !== 'dungeon' || !layer.visible) continue;
+      const compiled = compileDungeonLayer(layer);
+      if (!compiled.polygons.length) continue;
+      try {
+        const result = intersection(compiled.polygons, region);
+        for (const polygon of result) {
+          const outer = polygon[0];
+          if (outer && outer.length >= 4) {
+            rings.push(outer.map(([x, y]) => [x, y] as Point).slice(0, -1));
+          }
+        }
+      } catch {
+        // Keep the previous clipboard if the boolean operation fails.
+      }
+    }
+    geometryClipboard.value = rings;
+  }
+
+  function cutGeometrySelection(points: Point[]): void {
+    const current = map.value;
+    if (!current || points.length < 3) return;
+    commit({
+      ...current,
+      layers: current.layers.map((layer) =>
+        layer.type === 'dungeon'
+          ? {
+              ...layer,
+              shapes: [
+                ...layer.shapes,
+                {
+                  id: generateId(),
+                  operation: 'subtract' as const,
+                  shape: {
+                    kind: 'polygon' as const,
+                    points,
+                    rough: 0 as const,
+                    smooth: false,
+                  },
+                },
+              ],
+            }
+          : layer,
+      ),
+    });
+  }
+
+  function pasteGeometryClipboard(): void {
+    const current = map.value;
+    const layer = activeLayer.value;
+    if (!current || !layer || !geometryClipboard.value.length) return;
+    const operation = toolSettings.value.mode === 'erase' ? 'subtract' : 'add';
+    const shapes = geometryClipboard.value.map((points) => ({
+      id: generateId(),
+      operation: operation as 'add' | 'subtract',
+      shape: {
+        kind: 'polygon' as const,
+        points: points.map(([x, y]) => [x + 0.5, y + 0.5] as Point),
+        rough: toolSettings.value.rough,
+        smooth: toolSettings.value.smooth,
+      },
+    }));
+    commit({
+      ...current,
+      layers: current.layers.map((entry) =>
+        entry.id === layer.id
+          ? { ...layer, shapes: [...layer.shapes, ...shapes] }
+          : entry,
+      ),
+    });
+  }
+
   function setObjects(objects: ImagesLayer['objects']): void {
     const current = map.value;
     const layer = imagesLayer.value;
@@ -511,8 +613,25 @@ export const useMapStudioStore = defineStore('mapStudio', () => {
     if (!trimmed) return;
     setObjects([
       ...(imagesLayer.value?.objects ?? []),
-      createTextObject(trimmed, point, nextObjectOrder()),
+      createTextObject(
+        trimmed,
+        point,
+        nextObjectOrder(),
+        toolSettings.value.text,
+      ),
     ]);
+  }
+
+  function addTextObject(point: [number, number]): string | null {
+    const object = createTextObject(
+      '',
+      point,
+      nextObjectOrder(),
+      toolSettings.value.text,
+    );
+    setObjects([...(imagesLayer.value?.objects ?? []), object]);
+    selectObjects([object.id]);
+    return object.id;
   }
 
   function addImage(
@@ -543,16 +662,55 @@ export const useMapStudioStore = defineStore('mapStudio', () => {
     ]);
   }
 
+  const geometryClipboard = shallowRef<Point[][]>([]);
+
+  const selectedGroupId = computed(() => {
+    const objects = selectedObjects.value;
+    if (!objects.length) return null;
+    const groupId = objects[0].groupId ?? null;
+    return groupId && objects.every((object) => object.groupId === groupId)
+      ? groupId
+      : null;
+  });
+
+  function expandGroupIds(ids: string[]): string[] {
+    const selected = new Set(ids);
+    for (const object of imagesLayer.value?.objects ?? []) {
+      if (object.groupId && selected.has(object.id)) selected.add(object.id);
+      if (!object.groupId) continue;
+    }
+    const groups = new Set(
+      (imagesLayer.value?.objects ?? [])
+        .filter((object) => selected.has(object.id) && object.groupId)
+        .map((object) => object.groupId as string),
+    );
+    for (const object of imagesLayer.value?.objects ?? []) {
+      if (object.groupId && groups.has(object.groupId)) selected.add(object.id);
+    }
+    return [...selected];
+  }
+
   function selectObject(id: string | null): void {
-    selectedObjectId.value = id;
-    selectedObjectIds.value = id ? [id] : [];
-    if (id) selectedShapeId.value = null;
+    if (!id) {
+      selectedObjectId.value = null;
+      selectedObjectIds.value = [];
+      return;
+    }
+    selectObjects([id]);
   }
 
   function selectObjects(ids: string[]): void {
-    selectedObjectIds.value = [...new Set(ids)];
+    selectedObjectIds.value = [...new Set(expandGroupIds(ids))];
     selectedObjectId.value = selectedObjectIds.value.at(-1) ?? null;
     if (selectedObjectIds.value.length) selectedShapeId.value = null;
+  }
+
+  function toggleObjectSelection(id: string): void {
+    const ids = new Set(selectedObjectIds.value);
+    if (!ids.has(id)) {
+      for (const objectId of expandGroupIds([id])) ids.add(objectId);
+    }
+    selectObjects([...ids]);
   }
 
   function selectShape(id: string | null): void {
@@ -1018,6 +1176,93 @@ export const useMapStudioStore = defineStore('mapStudio', () => {
     );
   }
 
+  function groupSelectedObjects(): string | null {
+    const ids = new Set(selectedObjectIds.value);
+    if (ids.size < 2) return null;
+    const groupId = generateId();
+    setObjects(
+      (imagesLayer.value?.objects ?? []).map((object) =>
+        ids.has(object.id) ? { ...object, groupId } : object,
+      ),
+    );
+    return groupId;
+  }
+
+  function ungroupSelectedObjects(): void {
+    const ids = new Set(selectedObjectIds.value);
+    if (!ids.size) return;
+    setObjects(
+      (imagesLayer.value?.objects ?? []).map((object) =>
+        ids.has(object.id) ? { ...object, groupId: null } : object,
+      ),
+    );
+  }
+
+  function toggleGroupSelection(): void {
+    if (selectedGroupId.value) ungroupSelectedObjects();
+    else groupSelectedObjects();
+  }
+
+  function nudgeSelectedObjects(dx: number, dy: number): void {
+    const ids = new Set(selectedObjectIds.value);
+    if (!ids.size) return;
+    setObjects(
+      (imagesLayer.value?.objects ?? []).map((object) =>
+        ids.has(object.id) ? moveObject(object, dx, dy) : object,
+      ),
+    );
+  }
+
+  function copySelectedObjects(): StudioObject[] {
+    const ids = new Set(selectedObjectIds.value);
+    return (imagesLayer.value?.objects ?? [])
+      .filter((object) => ids.has(object.id))
+      .map((object) => JSON.parse(JSON.stringify(object)) as StudioObject);
+  }
+
+  function pasteObjects(clones: StudioObject[]): void {
+    if (!clones.length) return;
+    const objects = imagesLayer.value?.objects ?? [];
+    const start = nextObjectOrder();
+    const copies = clones.map((source, index) => {
+      const copy = JSON.parse(JSON.stringify(source)) as StudioObject;
+      if (copy.type === 'text' || copy.type === 'image') {
+        copy.transform.x += 0.5;
+        copy.transform.y += 0.5;
+      } else if (copy.type === 'door') {
+        copy.a = [copy.a[0] + 0.5, copy.a[1] + 0.5];
+        copy.b = [copy.b[0] + 0.5, copy.b[1] + 0.5];
+        copy.transform.x += 0.5;
+        copy.transform.y += 0.5;
+      } else {
+        copy.points = copy.points.map(([x, y]) => [x + 0.5, y + 0.5]);
+        copy.transform.x += 0.5;
+        copy.transform.y += 0.5;
+      }
+      return {
+        ...copy,
+        id: generateId(),
+        groupId: null,
+        order: start + index,
+      } as StudioObject;
+    });
+    setObjects([...objects, ...copies]);
+    selectObjects(copies.map((copy) => copy.id));
+  }
+
+  function reorderSelectedToEdge(direction: 'front' | 'back'): void {
+    const ids = new Set(selectedObjectIds.value);
+    const objects = [...(imagesLayer.value?.objects ?? [])].sort(
+      (a, b) => a.order - b.order,
+    );
+    if (!ids.size) return;
+    const selected = objects.filter((object) => ids.has(object.id));
+    const rest = objects.filter((object) => !ids.has(object.id));
+    const next =
+      direction === 'front' ? [...rest, ...selected] : [...selected, ...rest];
+    setObjects(next.map((object, order) => ({ ...object, order: order + 1 })));
+  }
+
   function removeSelectedObjects(): void {
     const ids = new Set(selectedObjectIds.value);
     if (!ids.size) return;
@@ -1108,6 +1353,8 @@ export const useMapStudioStore = defineStore('mapStudio', () => {
     selectedObjectId,
     selectedObject,
     selectedObjectIds,
+    selectedGroupId,
+    geometryClipboard,
     selectedObjects,
     selectedShapeId,
     selectedShape,
@@ -1130,11 +1377,13 @@ export const useMapStudioStore = defineStore('mapStudio', () => {
     addPath,
     addWall,
     addText,
+    addTextObject,
     addImage,
     addDoor,
     addStairs,
     selectObject,
     selectObjects,
+    toggleObjectSelection,
     selectShape,
     moveSelectedObject,
     beginObjectDrag,
@@ -1162,6 +1411,16 @@ export const useMapStudioStore = defineStore('mapStudio', () => {
     setLayerParent,
     moveLayerRelative,
     setLayerStructure,
+    groupSelectedObjects,
+    ungroupSelectedObjects,
+    toggleGroupSelection,
+    nudgeSelectedObjects,
+    copySelectedObjects,
+    pasteObjects,
+    reorderSelectedToEdge,
+    copyGeometrySelection,
+    cutGeometrySelection,
+    pasteGeometryClipboard,
     renameLayer,
     removeLayer,
     moveLayer,

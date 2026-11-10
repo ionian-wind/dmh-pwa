@@ -189,6 +189,7 @@ export interface WallShape extends DungeonShapeBase {
     points: Point[];
     width: number;
     dash: boolean;
+    dashSize: number;
     rough: Roughness;
     smooth: boolean;
   };
@@ -206,6 +207,7 @@ export interface ObjectBase {
   locked: boolean;
   opacity: number;
   blendMode: BlendMode;
+  groupId?: string | null;
 }
 
 export interface Transform {
@@ -218,6 +220,22 @@ export interface Transform {
   flipY: boolean;
 }
 
+export interface TextShadow {
+  enabled: boolean;
+  color: string;
+  offsetX: number;
+  offsetY: number;
+  opacity: number;
+}
+
+export interface TextToolStyle {
+  fontFamily: string;
+  fontSize: number;
+  color: string;
+  align: 'left' | 'center' | 'right';
+  shadow: TextShadow;
+}
+
 export interface TextObject extends ObjectBase {
   type: 'text';
   text: string;
@@ -225,6 +243,7 @@ export interface TextObject extends ObjectBase {
   fontSize: number;
   color: string;
   align: 'left' | 'center' | 'right';
+  shadow: TextShadow;
   transform: Transform;
 }
 
@@ -263,14 +282,18 @@ export interface ToolSettings {
   roughMode: boolean;
   pathRadius: number;
   wallWidth: number;
+  wallDash: boolean;
+  wallDashSize: number;
   sides: number;
   drawTo: 'point' | 'edge';
   smooth: boolean;
+  text: TextToolStyle;
 }
 
 export type StudioTool =
   | 'pan'
   | 'object'
+  | 'select'
   | 'text'
   | 'door'
   | 'stairs'

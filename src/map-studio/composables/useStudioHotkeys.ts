@@ -15,6 +15,14 @@ interface StudioHotkeyActions {
   toggleSnap?: () => void;
   setDivision?: (division: number) => void;
   adjustRadius?: (delta: -1 | 1) => void;
+  cutSelection?: () => void;
+  copySelection?: () => void;
+  pasteSelection?: () => void;
+  groupSelection?: () => void;
+  nudgeSelection?: (dx: number, dy: number) => void;
+  sendToBack?: () => void;
+  bringToFront?: () => void;
+  hasObjectSelection?: () => boolean;
 }
 
 function isEditable(target: EventTarget | null): boolean {
@@ -48,6 +56,21 @@ export function useStudioHotkeys(actions: StudioHotkeyActions): void {
       actions.redo();
       return;
     }
+    if (modifier && event.key.toLowerCase() === 'c') {
+      event.preventDefault();
+      actions.copySelection?.();
+      return;
+    }
+    if (modifier && event.key.toLowerCase() === 'x') {
+      event.preventDefault();
+      actions.cutSelection?.();
+      return;
+    }
+    if (modifier && event.key.toLowerCase() === 'v') {
+      event.preventDefault();
+      actions.pasteSelection?.();
+      return;
+    }
     if (event.key === 'Delete' || event.key === 'Backspace') {
       if (actions.deleteSelection) {
         event.preventDefault();
@@ -66,6 +89,7 @@ export function useStudioHotkeys(actions: StudioHotkeyActions): void {
         '5': 'path',
         '6': 'polygon',
         '7': 'wall',
+        '8': 'select',
         '9': 'door',
         '0': 'stairs',
         '-': 'text',
@@ -104,6 +128,33 @@ export function useStudioHotkeys(actions: StudioHotkeyActions): void {
       event.preventDefault();
       actions.toggleSnap?.();
       return;
+    }
+    if (event.key.toLowerCase() === 'g' && actions.hasObjectSelection?.()) {
+      event.preventDefault();
+      actions.groupSelection?.();
+      return;
+    }
+    if (event.key.startsWith('Arrow') && actions.hasObjectSelection?.()) {
+      event.preventDefault();
+      const step = event.shiftKey ? 1 : 0.1;
+      const dx =
+        event.key === 'ArrowLeft'
+          ? -step
+          : event.key === 'ArrowRight'
+            ? step
+            : 0;
+      const dy =
+        event.key === 'ArrowUp' ? -step : event.key === 'ArrowDown' ? step : 0;
+      actions.nudgeSelection?.(dx, dy);
+      return;
+    }
+    if (event.key === '[' || event.key === ']') {
+      if (actions.hasObjectSelection?.()) {
+        event.preventDefault();
+        if (event.key === '[') actions.sendToBack?.();
+        else actions.bringToFront?.();
+        return;
+      }
     }
     if (event.shiftKey && event.key.toLowerCase() === 'r') {
       if (actions.cycleRough) {

@@ -146,6 +146,20 @@ describe('map studio shape helpers', () => {
     store.addPolygon([[0, 0]]);
     store.toolSettings.pathRadius = 0.5;
     store.toolSettings.smooth = true;
+    store.toolSettings.wallWidth = 0.2;
+    store.toolSettings.wallDash = true;
+    store.toolSettings.wallDashSize = 0.5;
+    store.addWall([
+      [0, 0],
+      [2, 2],
+    ]);
+    expect(store.activeLayer?.shapes.at(-1)?.shape).toMatchObject({
+      kind: 'wall',
+      width: 0.2,
+      dash: true,
+      dashSize: 0.5,
+      smooth: true,
+    });
     store.addPath([
       [0, 0],
       [2, 2],
@@ -157,7 +171,7 @@ describe('map studio shape helpers', () => {
     });
     expect(
       (store.activeLayer?.shapes ?? []).map((shape) => shape.shape.kind),
-    ).toEqual(['circle', 'polygon', 'path']);
+    ).toEqual(['circle', 'polygon', 'wall', 'path']);
 
     store.toolSettings.mode = 'erase';
     store.addCircle({ cx: 4, cy: 4, radius: 1 });
@@ -680,5 +694,92 @@ describe('map studio batch object actions', () => {
     store.flipSelectedObjects('y');
     store.flipSelectedObjects('x');
     expect(store.selectedObjects).toHaveLength(2);
+  });
+});
+
+describe('map studio geometry clipboard', () => {
+  it('copies, cuts and pastes dungeon geometry', () => {
+    const store = useMapStudioStore();
+    store.setMap(createMap(createProject().id));
+    store.addRectangle({ x: 0, y: 0, width: 4, height: 4 });
+    const region: Array<[number, number]> = [
+      [1, 1],
+      [3, 1],
+      [3, 3],
+      [1, 3],
+    ];
+    store.copyGeometrySelection(region);
+    expect(store.geometryClipboard.length).toBeGreaterThan(0);
+    const before = store.activeLayer!.shapes.length;
+    store.cutGeometrySelection(region);
+    expect(store.activeLayer!.shapes.length).toBe(before + 1);
+    expect(store.activeLayer!.shapes.at(-1)?.operation).toBe('subtract');
+    store.pasteGeometryClipboard();
+    expect(store.activeLayer!.shapes.at(-1)?.operation).toBe('add');
+    store.toolSettings.mode = 'erase';
+    store.pasteGeometryClipboard();
+    expect(store.activeLayer!.shapes.at(-1)?.operation).toBe('subtract');
+  });
+});
+
+describe('map studio object grouping and clipboard', () => {
+  it('groups, expands selection, nudges and ungroups', () => {
+    const store = useMapStudioStore();
+    store.setMap(createMap(createProject().id));
+    store.addText('A', [1, 1]);
+    store.addText('B', [3, 3]);
+    const [a, b] = store.imagesLayer!.objects;
+    store.selectObjects([a.id, b.id]);
+    expect(store.groupSelectedObjects()).toBeTruthy();
+    expect(store.selectedGroupId).toBeTruthy();
+    store.selectObject(a.id);
+    expect(store.selectedObjectIds.sort()).toEqual([a.id, b.id].sort());
+    store.nudgeSelectedObjects(0.5, 0.25);
+    expect(store.imagesLayer!.objects[0].transform.x).toBe(1.5);
+    expect(store.imagesLayer!.objects[1].transform.x).toBe(3.5);
+    store.toggleGroupSelection();
+    expect(store.selectedGroupId).toBeNull();
+  });
+
+  it('copies and pastes objects with offset and new ids', () => {
+    const store = useMapStudioStore();
+    store.setMap(createMap(createProject().id));
+    store.addText('A', [1, 1]);
+    store.selectObject(store.imagesLayer!.objects[0].id);
+    const clipboard = store.copySelectedObjects();
+    expect(clipboard).toHaveLength(1);
+    store.pasteObjects(clipboard);
+    expect(store.imagesLayer!.objects).toHaveLength(2);
+    expect(store.imagesLayer!.objects[1].id).not.toBe(
+      store.imagesLayer!.objects[0].id,
+    );
+    expect(store.imagesLayer!.objects[1].transform.x).toBe(1.5);
+    expect(store.selectedObjectIds).toEqual([store.imagesLayer!.objects[1].id]);
+  });
+
+  it('ignores grouping, paste and nudge without a selection', () => {
+    const store = useMapStudioStore();
+    store.setMap(createMap(createProject().id));
+    expect(store.groupSelectedObjects()).toBeNull();
+    store.ungroupSelectedObjects();
+    expect(store.copySelectedObjects()).toEqual([]);
+    store.pasteObjects([]);
+    store.nudgeSelectedObjects(1, 1);
+    store.reorderSelectedToEdge('front');
+    store.reorderSelectedToEdge('back');
+    expect(store.selectedObjectIds).toEqual([]);
+  });
+
+  it('reorders the selection to the front and back', () => {
+    const store = useMapStudioStore();
+    store.setMap(createMap(createProject().id));
+    store.addText('A', [1, 1]);
+    store.addText('B', [3, 3]);
+    const first = store.imagesLayer!.objects[0].id;
+    store.selectObject(first);
+    store.reorderSelectedToEdge('front');
+    expect(store.imagesLayer!.objects.at(-1)!.id).toBe(first);
+    store.reorderSelectedToEdge('back');
+    expect(store.imagesLayer!.objects[0].id).toBe(first);
   });
 });

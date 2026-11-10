@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue';
+import { computed, nextTick, onMounted, ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import { Notify } from 'quasar';
@@ -8,7 +8,6 @@ import StudioHeader from '@/map-studio/components/StudioHeader.vue';
 import StudioPresetsPanel from '@/map-studio/components/StudioPresetsPanel.vue';
 import StudioLayersPanel from '@/map-studio/components/StudioLayersPanel.vue';
 import { useMapStudioStore } from '@/map-studio/stores/mapStudioStore';
-import { prompt } from '@/dialogs';
 import { useMapStudioAutosave } from '@/map-studio/composables/useMapStudioAutosave';
 import { useStudioHotkeys } from '@/map-studio/composables/useStudioHotkeys';
 import {
@@ -16,6 +15,7 @@ import {
   listStudioLocationOptions,
 } from '@/map-studio/integration/location';
 import type { PixiStudioRenderer } from '@/map-studio/renderer/PixiStudioRenderer';
+import type { Point, StudioObject } from '@/map-studio/domain/document/types';
 
 const { t } = useI18n();
 const route = useRoute();
@@ -42,6 +42,10 @@ const imageInput = ref<HTMLInputElement | null>(null);
 const pendingImage = ref<{ src: string; width: number; height: number } | null>(
   null,
 );
+const clipboard = ref<StudioObject[]>([]);
+const contextMenu = ref<{ x: number; y: number } | null>(null);
+const geometryRegion = ref<Point[] | null>(null);
+const canvasHost = ref<InstanceType<typeof CanvasHost> | null>(null);
 useMapStudioAutosave(store);
 useStudioHotkeys({
   save: () => void store.save(),
@@ -74,6 +78,32 @@ useStudioHotkeys({
       Number((store.toolSettings.pathRadius + delta * step).toFixed(3)),
     );
   },
+  cutSelection: () => {
+    if (geometryRegion.value) {
+      store.cutGeometrySelection(geometryRegion.value);
+      geometryRegion.value = null;
+      canvasHost.value?.clearGeometrySelection();
+    } else {
+      clipboard.value = store.copySelectedObjects();
+      store.removeSelectedObjects();
+    }
+  },
+  copySelection: () => {
+    if (geometryRegion.value) {
+      store.copyGeometrySelection(geometryRegion.value);
+    } else {
+      clipboard.value = store.copySelectedObjects();
+    }
+  },
+  pasteSelection: () => {
+    if (store.geometryClipboard.length) store.pasteGeometryClipboard();
+    else if (clipboard.value.length) store.pasteObjects(clipboard.value);
+  },
+  groupSelection: () => store.toggleGroupSelection(),
+  nudgeSelection: (dx, dy) => store.nudgeSelectedObjects(dx, dy),
+  sendToBack: () => store.reorderSelectedToEdge('back'),
+  bringToFront: () => store.reorderSelectedToEdge('front'),
+  hasObjectSelection: () => store.selectedObjectIds.length > 0,
 });
 
 const map = computed(() => store.map);
@@ -130,6 +160,11 @@ const toolbar = computed(() => [
     icon: 'tabler-photo',
     label: t('mapStudio.image'),
   },
+  {
+    id: 'select' as const,
+    icon: 'tabler-lasso-polygon',
+    label: t('mapStudio.select'),
+  },
 ]);
 const divisions = [1, 2, 3, 4, 6, 8, 9].map((value) => ({
   label: `1/${value}`,
@@ -139,6 +174,74 @@ const drawToOptions = computed(() => [
   { label: t('mapStudio.point'), value: 'point' },
   { label: t('mapStudio.edge'), value: 'edge' },
 ]);
+const fontOptions = [
+  'Georgia, serif',
+  'Arial, sans-serif',
+  'Courier New, monospace',
+  'Times New Roman, serif',
+  'Verdana, sans-serif',
+  'Trebuchet MS, sans-serif',
+];
+const editingTextId = ref<string | null>(null);
+const textDraft = ref('');
+const textEditWasNew = ref(false);
+const textEditorInput = ref<HTMLInputElement | null>(null);
+
+const textEditorStyle = computed(() => {
+  const id = editingTextId.value;
+  if (!id || !renderer.value || !map.value) return {};
+  const object = store.imagesLayer?.objects.find((entry) => entry.id === id);
+  if (!object || object.type !== 'text') return {};
+  const vp = renderer.value.getViewport();
+  return {
+    left: `${object.transform.x * 70 * vp.zoom + vp.x}px`,
+    top: `${object.transform.y * 70 * vp.zoom + vp.y}px`,
+    minWidth: `${Math.max(120, object.transform.width * 70 * vp.zoom)}px`,
+    fontSize: `${Math.max(10, object.fontSize * 70 * vp.zoom)}px`,
+    fontFamily: object.fontFamily,
+    color: object.color,
+    textAlign: object.align,
+  };
+});
+
+function startTextEdit(id: string, isNew = false): void {
+  const object = store.imagesLayer?.objects.find((entry) => entry.id === id);
+  if (!object || object.type !== 'text') return;
+  editingTextId.value = id;
+  textDraft.value = object.text;
+  textEditWasNew.value = isNew;
+  void nextTick(() => {
+    textEditorInput.value?.focus();
+    textEditorInput.value?.select();
+  });
+}
+
+function commitTextEdit(): void {
+  const id = editingTextId.value;
+  if (!id) return;
+  const value = textDraft.value;
+  const object = store.imagesLayer?.objects.find((entry) => entry.id === id);
+  editingTextId.value = null;
+  if (!object || object.type !== 'text') return;
+  if (!value.trim()) {
+    if (textEditWasNew.value) {
+      store.selectObject(id);
+      store.removeSelectedObject();
+    }
+    return;
+  }
+  if (value !== object.text) store.updateObject(id, { text: value });
+}
+
+function cancelTextEdit(): void {
+  const id = editingTextId.value;
+  if (!id) return;
+  if (textEditWasNew.value) {
+    store.selectObject(id);
+    store.removeSelectedObject();
+  }
+  editingTextId.value = null;
+}
 
 function setCircleSides(value: number | string | null | undefined): void {
   store.toolSettings.sides = Math.max(
@@ -194,13 +297,51 @@ function rotateSelection(delta: number): void {
   store.rotateSelectedObjectsLive(delta);
 }
 
-async function editText(id: string): Promise<void> {
-  const object = store.imagesLayer?.objects.find((entry) => entry.id === id);
-  if (!object || object.type !== 'text') return;
-  const text = await prompt(t('mapStudio.textPrompt'), {
-    modelValue: object.text,
-  });
-  if (text !== null) store.updateObject(id, { text });
+function editText(id: string): void {
+  startTextEdit(id);
+}
+
+function onSelectRegion(points: Point[]): void {
+  geometryRegion.value = points;
+}
+
+function copyGeometry(points: Point[]): void {
+  store.copyGeometrySelection(points);
+}
+
+function cutGeometry(points: Point[]): void {
+  store.cutGeometrySelection(points);
+  geometryRegion.value = null;
+}
+
+function deleteGeometry(points: Point[]): void {
+  store.cutGeometrySelection(points);
+  geometryRegion.value = null;
+}
+
+function showContextMenu(payload: {
+  x: number;
+  y: number;
+  objectId: string | null;
+}): void {
+  if (payload.objectId) {
+    const selected = store.selectedObjectIds;
+    const keepSelection =
+      selected.includes(payload.objectId) &&
+      (selected.length === 1 || !!store.selectedGroupId);
+    if (!keepSelection) store.selectObject(payload.objectId);
+  }
+  contextMenu.value = { x: payload.x, y: payload.y };
+}
+
+function contextAction(action: string): void {
+  contextMenu.value = null;
+  if (action === 'duplicate') store.duplicateSelectedObjects();
+  else if (action === 'front') store.reorderSelectedToEdge('front');
+  else if (action === 'back') store.reorderSelectedToEdge('back');
+  else if (action === 'flip-x') store.flipSelectedObjects('x');
+  else if (action === 'flip-y') store.flipSelectedObjects('y');
+  else if (action === 'delete') store.removeSelectedObjects();
 }
 
 function chooseImage(): void {
@@ -245,9 +386,9 @@ function addImage(point: [number, number]): void {
   store.setTool('object');
 }
 
-async function addText(point: [number, number]): Promise<void> {
-  const text = await prompt(t('mapStudio.textPrompt'), { modelValue: '' });
-  if (text) store.addText(text, point);
+function addText(point: [number, number]): void {
+  const id = store.addTextObject(point);
+  if (id) window.setTimeout(() => startTextEdit(id, true), 0);
 }
 
 function download(blob: Blob, filename: string): void {
@@ -416,11 +557,135 @@ async function applyToLocation(): Promise<void> {
           :label="t('mapStudio.rough')"
         />
         <QToggle
-          v-if="store.tool === 'polygon' || store.tool === 'path'"
+          v-if="
+            store.tool === 'polygon' ||
+            store.tool === 'path' ||
+            store.tool === 'wall'
+          "
           v-model="store.toolSettings.smooth"
           dense
           :label="t('mapStudio.smooth')"
         />
+        <template v-if="store.tool === 'wall'">
+          <QInput
+            v-model.number="store.toolSettings.wallWidth"
+            dense
+            outlined
+            type="number"
+            min="0.01"
+            step="0.01"
+            :label="t('mapStudio.width')"
+            class="studio-sides-input"
+          />
+          <QToggle
+            v-model="store.toolSettings.wallDash"
+            dense
+            :label="t('mapStudio.dash')"
+          />
+          <QInput
+            v-if="store.toolSettings.wallDash"
+            v-model.number="store.toolSettings.wallDashSize"
+            dense
+            outlined
+            type="number"
+            min="0.05"
+            step="0.05"
+            :label="t('mapStudio.dashSize')"
+            class="studio-sides-input"
+          />
+        </template>
+        <template v-if="store.tool === 'text'">
+          <QSelect
+            v-model="store.toolSettings.text.fontFamily"
+            dense
+            outlined
+            :options="fontOptions"
+            :label="t('mapStudio.font')"
+            class="studio-text-font"
+          />
+          <QInput
+            v-model.number="store.toolSettings.text.fontSize"
+            dense
+            outlined
+            type="number"
+            min="0.05"
+            step="0.01"
+            :label="t('mapStudio.fontSize')"
+            class="studio-sides-input"
+          />
+          <input
+            type="color"
+            :value="store.toolSettings.text.color"
+            :aria-label="t('mapStudio.colour')"
+            @input="
+              store.toolSettings.text.color = (
+                $event.target as HTMLInputElement
+              ).value
+            "
+          />
+          <QBtnGroup flat>
+            <QBtn
+              v-for="alignment in ['left', 'center', 'right'] as const"
+              :key="alignment"
+              flat
+              dense
+              round
+              :icon="`tabler-align-${alignment}`"
+              :class="{
+                'studio-tool--active':
+                  store.toolSettings.text.align === alignment,
+              }"
+              :aria-label="t(`mapStudio.${alignment}`)"
+              @click="store.toolSettings.text.align = alignment"
+            />
+          </QBtnGroup>
+          <QToggle
+            v-model="store.toolSettings.text.shadow.enabled"
+            dense
+            :label="t('mapStudio.dropShadow')"
+          />
+          <template v-if="store.toolSettings.text.shadow.enabled">
+            <input
+              type="color"
+              :value="store.toolSettings.text.shadow.color"
+              :aria-label="t('mapStudio.shadowColor')"
+              @input="
+                store.toolSettings.text.shadow.color = (
+                  $event.target as HTMLInputElement
+                ).value
+              "
+            />
+            <QInput
+              v-model.number="store.toolSettings.text.shadow.offsetX"
+              dense
+              outlined
+              type="number"
+              step="0.01"
+              :label="t('mapStudio.offsetX')"
+              class="studio-sides-input"
+            />
+            <QInput
+              v-model.number="store.toolSettings.text.shadow.offsetY"
+              dense
+              outlined
+              type="number"
+              step="0.01"
+              :label="t('mapStudio.offsetY')"
+              class="studio-sides-input"
+            />
+            <QInput
+              v-model.number="store.toolSettings.text.shadow.opacity"
+              dense
+              outlined
+              type="number"
+              min="0"
+              max="1"
+              step="0.05"
+              :label="t('mapStudio.opacity')"
+              class="studio-sides-input"
+            />
+          </template>
+        </template>
         <QInput
           v-if="store.tool === 'path'"
           v-model.number="store.toolSettings.pathRadius"
@@ -475,6 +740,7 @@ async function applyToLocation(): Promise<void> {
 
       <div class="studio-body">
         <CanvasHost
+          ref="canvasHost"
           :map="map"
           :tool="store.tool"
           :settings="store.toolSettings"
@@ -491,6 +757,14 @@ async function applyToLocation(): Promise<void> {
           @stairs="store.addStairs"
           @select="store.selectObject"
           @selectMany="store.selectObjects"
+          @toggleSelect="store.toggleObjectSelection"
+          @groupSelection="store.toggleGroupSelection"
+          @selectRegion="onSelectRegion"
+          @copyGeometry="copyGeometry"
+          @cutGeometry="cutGeometry"
+          @deleteGeometry="deleteGeometry"
+          @contextMenu="showContextMenu"
+          @pointerdown="contextMenu = null"
           @selectShape="store.selectShape"
           @beginObjectDrag="store.beginObjectDrag"
           @moveObjectLive="store.moveSelectedObjectLive($event.dx, $event.dy)"
@@ -502,6 +776,47 @@ async function applyToLocation(): Promise<void> {
           @rotateSelection="rotateSelection"
           @ready="onRendererReady"
         />
+        <input
+          v-if="editingTextId"
+          ref="textEditorInput"
+          v-model="textDraft"
+          class="studio-text-editor"
+          :style="textEditorStyle"
+          @keydown.enter.prevent="commitTextEdit"
+          @keydown.esc.prevent="cancelTextEdit"
+          @blur="commitTextEdit"
+        />
+        <div
+          v-if="contextMenu"
+          class="studio-context-menu"
+          :style="{ left: `${contextMenu.x}px`, top: `${contextMenu.y}px` }"
+          @pointerdown.stop
+        >
+          <button type="button" @click="contextAction('duplicate')">
+            <QIcon name="tabler-copy" size="16px" />
+            <span>{{ t('mapStudio.duplicate') }}</span>
+          </button>
+          <button type="button" @click="contextAction('front')">
+            <QIcon name="tabler-arrow-up" size="16px" />
+            <span>{{ t('mapStudio.bringToFront') }}</span>
+          </button>
+          <button type="button" @click="contextAction('back')">
+            <QIcon name="tabler-arrow-down" size="16px" />
+            <span>{{ t('mapStudio.sendToBack') }}</span>
+          </button>
+          <button type="button" @click="contextAction('flip-x')">
+            <QIcon name="tabler-flip-horizontal" size="16px" />
+            <span>{{ t('mapStudio.flipHorizontal') }}</span>
+          </button>
+          <button type="button" @click="contextAction('flip-y')">
+            <QIcon name="tabler-flip-vertical" size="16px" />
+            <span>{{ t('mapStudio.flipVertical') }}</span>
+          </button>
+          <button type="button" @click="contextAction('delete')">
+            <QIcon name="tabler-trash" size="16px" />
+            <span>{{ t('common.delete') }}</span>
+          </button>
+        </div>
 
         <StudioPresetsPanel />
 
@@ -581,8 +896,11 @@ async function applyToLocation(): Promise<void> {
   left: 50%;
   z-index: 4;
   display: flex;
+  flex-wrap: wrap;
   gap: 4px;
   align-items: center;
+  justify-content: center;
+  max-width: calc(100% - 24px);
   padding: 6px 10px;
   background: var(--color-background);
   border: 1px solid var(--color-border-light);
@@ -602,6 +920,46 @@ async function applyToLocation(): Promise<void> {
 }
 .studio-sides-input {
   width: 76px;
+}
+.studio-text-font {
+  width: 150px;
+}
+.studio-context-menu {
+  position: absolute;
+  z-index: 8;
+  display: flex;
+  flex-direction: column;
+  min-width: 180px;
+  padding: 4px;
+  background: var(--color-background);
+  border: 1px solid var(--color-border-light);
+  border-radius: 6px;
+  box-shadow: 0 8px 24px rgb(0 0 0 / 20%);
+}
+.studio-context-menu button {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  padding: 6px 8px;
+  font: inherit;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+  background: none;
+  border: 0;
+  border-radius: 4px;
+}
+.studio-context-menu button:hover {
+  background: var(--color-selected-surface);
+}
+.studio-text-editor {
+  position: absolute;
+  z-index: 5;
+  padding: 1px 3px;
+  outline: 2px solid var(--q-primary);
+  background: color-mix(in srgb, var(--color-background) 85%, transparent);
+  border: 0;
+  border-radius: 2px;
 }
 .hidden-input {
   display: none;

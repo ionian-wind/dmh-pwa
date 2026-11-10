@@ -343,6 +343,96 @@ describe('MapStudioView UI', () => {
     wrapper.unmount();
   });
 
+  it('places and edits text inline', async () => {
+    const { wrapper, store } = await mountView();
+    const canvas = wrapper.findComponent({ name: 'CanvasHost' });
+    canvas.vm.$emit('text', [2, 2]);
+    await flushPromises();
+    const editor = wrapper.find('.studio-text-editor');
+    expect(editor.exists()).toBe(true);
+    await editor.setValue('Inline text');
+    await editor.trigger('keydown', { key: 'Enter' });
+    await flushPromises();
+    expect(store.imagesLayer!.objects[0]).toMatchObject({
+      text: 'Inline text',
+    });
+
+    canvas.vm.$emit('editText', store.imagesLayer!.objects[0].id);
+    await flushPromises();
+    const second = wrapper.find('.studio-text-editor');
+    expect(second.exists()).toBe(true);
+    expect((second.element as HTMLInputElement).value).toBe('Inline text');
+    await second.setValue('Changed');
+    await second.trigger('blur');
+    await flushPromises();
+    expect(store.imagesLayer!.objects[0]).toMatchObject({ text: 'Changed' });
+    wrapper.unmount();
+  });
+
+  it('cancels a new empty text object', async () => {
+    const { wrapper, store } = await mountView();
+    const canvas = wrapper.findComponent({ name: 'CanvasHost' });
+    canvas.vm.$emit('text', [2, 2]);
+    await flushPromises();
+    expect(store.imagesLayer!.objects).toHaveLength(1);
+    await wrapper
+      .find('.studio-text-editor')
+      .trigger('keydown', { key: 'Escape' });
+    await flushPromises();
+    expect(store.imagesLayer!.objects).toHaveLength(0);
+    wrapper.unmount();
+  });
+
+  it('opens the object context menu and duplicates', async () => {
+    const { wrapper, store } = await mountView();
+    store.addText('Menu', [2, 2]);
+    await flushPromises();
+    const object = store.imagesLayer!.objects[0];
+    const canvas = wrapper.findComponent({ name: 'CanvasHost' });
+    canvas.vm.$emit('contextMenu', {
+      x: 100,
+      y: 100,
+      objectId: object.id,
+    });
+    await flushPromises();
+    expect(wrapper.find('.studio-context-menu').exists()).toBe(true);
+    const duplicate = wrapper
+      .findAll('.studio-context-menu button')
+      .find((button) => button.text().includes('Duplicate'))!;
+    await duplicate.trigger('click');
+    await flushPromises();
+    expect(store.imagesLayer!.objects).toHaveLength(2);
+    expect(wrapper.find('.studio-context-menu').exists()).toBe(false);
+
+    const openMenu = async () => {
+      canvas.vm.$emit('contextMenu', {
+        x: 100,
+        y: 100,
+        objectId: store.selectedObjectId,
+      });
+      await flushPromises();
+    };
+    const clickAction = async (label: string) => {
+      const button = wrapper
+        .findAll('.studio-context-menu button')
+        .find((entry) => entry.text().includes(label))!;
+      await button.trigger('click');
+      await flushPromises();
+    };
+    await openMenu();
+    await clickAction('Bring to front');
+    await openMenu();
+    await clickAction('Send to back');
+    await openMenu();
+    await clickAction('Flip horizontal');
+    await openMenu();
+    await clickAction('Flip vertical');
+    await openMenu();
+    await clickAction('Delete');
+    expect(store.imagesLayer!.objects).toHaveLength(1);
+    wrapper.unmount();
+  });
+
   it('edits text object settings and actions', async () => {
     const { wrapper, store } = await mountView();
     store.addText('Hello', [2, 2]);
@@ -441,7 +531,7 @@ describe('MapStudioView UI', () => {
     wrapper.unmount();
   });
 
-  it('shows the smooth toggle for polygon and path', async () => {
+  it('shows smooth and wall styling controls', async () => {
     const { wrapper, store } = await mountView();
     store.setTool('polygon');
     await flushPromises();
@@ -449,6 +539,10 @@ describe('MapStudioView UI', () => {
     store.setTool('path');
     await flushPromises();
     expect(wrapper.text()).toContain('Smooth');
+    store.setTool('wall');
+    await flushPromises();
+    expect(wrapper.text()).toContain('Dash');
+    expect(wrapper.findAll('.studio-sides-input').length).toBeGreaterThan(0);
     wrapper.unmount();
   });
 

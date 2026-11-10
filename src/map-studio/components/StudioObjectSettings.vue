@@ -130,6 +130,39 @@ function updateTransform(key: string, value: number): void {
       />
     </label>
     <label v-if="object.type === 'text'" class="studio-field">
+      <span>{{ t('mapStudio.font') }}</span>
+      <select
+        :value="object.fontFamily"
+        @change="
+          updateSelected({
+            fontFamily: ($event.target as HTMLSelectElement).value,
+          })
+        "
+      >
+        <option value="Georgia, serif">Georgia</option>
+        <option value="Arial, sans-serif">Arial</option>
+        <option value="Courier New, monospace">Courier New</option>
+        <option value="Times New Roman, serif">Times New Roman</option>
+        <option value="Verdana, sans-serif">Verdana</option>
+        <option value="Trebuchet MS, sans-serif">Trebuchet MS</option>
+      </select>
+    </label>
+    <label v-if="object.type === 'text'" class="studio-field">
+      <span>{{ t('mapStudio.alignment') }}</span>
+      <select
+        :value="object.align"
+        @change="
+          updateSelected({
+            align: ($event.target as HTMLSelectElement).value,
+          })
+        "
+      >
+        <option value="left">{{ t('mapStudio.left') }}</option>
+        <option value="center">{{ t('mapStudio.center') }}</option>
+        <option value="right">{{ t('mapStudio.right') }}</option>
+      </select>
+    </label>
+    <label v-if="object.type === 'text'" class="studio-field">
       <span>{{ t('mapStudio.fontSize') }}</span>
       <input
         class="studio-number"
@@ -182,6 +215,93 @@ function updateTransform(key: string, value: number): void {
         "
       />
     </label>
+    <template v-if="object.type === 'text'">
+      <label class="studio-field studio-field--check">
+        <input
+          type="checkbox"
+          :checked="object.shadow.enabled"
+          @change="
+            updateSelected({
+              shadow: {
+                ...object.shadow,
+                enabled: ($event.target as HTMLInputElement).checked,
+              },
+            })
+          "
+        />
+        <span>{{ t('mapStudio.dropShadow') }}</span>
+      </label>
+      <template v-if="object.shadow.enabled">
+        <label class="studio-field">
+          <span>{{ t('mapStudio.shadowColor') }}</span>
+          <input
+            type="color"
+            :value="object.shadow.color"
+            @input="
+              updateSelected({
+                shadow: {
+                  ...object.shadow,
+                  color: ($event.target as HTMLInputElement).value,
+                },
+              })
+            "
+          />
+        </label>
+        <label class="studio-field">
+          <span>{{ t('mapStudio.offsetX') }}</span>
+          <input
+            class="studio-number"
+            type="number"
+            step="0.01"
+            :value="object.shadow.offsetX"
+            @input="
+              updateSelected({
+                shadow: {
+                  ...object.shadow,
+                  offsetX: Number(($event.target as HTMLInputElement).value),
+                },
+              })
+            "
+          />
+        </label>
+        <label class="studio-field">
+          <span>{{ t('mapStudio.offsetY') }}</span>
+          <input
+            class="studio-number"
+            type="number"
+            step="0.01"
+            :value="object.shadow.offsetY"
+            @input="
+              updateSelected({
+                shadow: {
+                  ...object.shadow,
+                  offsetY: Number(($event.target as HTMLInputElement).value),
+                },
+              })
+            "
+          />
+        </label>
+        <label class="studio-field">
+          <span>{{ t('mapStudio.shadowOpacity') }}</span>
+          <input
+            class="studio-number"
+            type="number"
+            min="0"
+            max="1"
+            step="0.05"
+            :value="object.shadow.opacity"
+            @input="
+              updateSelected({
+                shadow: {
+                  ...object.shadow,
+                  opacity: Number(($event.target as HTMLInputElement).value),
+                },
+              })
+            "
+          />
+        </label>
+      </template>
+    </template>
     <label class="studio-field">
       <span>{{ t('mapStudio.opacity') }}</span>
       <input

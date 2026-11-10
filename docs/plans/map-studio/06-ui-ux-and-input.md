@@ -192,6 +192,7 @@ Each panel is independent and remembers its scroll/expanded sections.
 - Settings are grouped: Mode/Snap/Division universal; tool-specific sections; a “Reset tool settings” action.
 - Circle/regular polygon adds a Sides slider plus numeric input (1 = circle) and a Draw to selector (Point or Edge).
 - Polygon adds a Smooth toggle; with Snap off, dragging draws a freehand polygon.
+- Text adds font family, size, colour, alignment and drop-shadow controls to the tool settings.
 - Sliders and number inputs have paired controls; units shown in cells (and optional ft/m via project settings).
 - Keyboard shortcuts are shown in tooltips.
 
@@ -236,6 +237,7 @@ See `01-feature-parity.md` section 13. Additional editor-wide:
 - `Ctrl/Cmd+0`: fit map; `Ctrl/Cmd+1`: 100%; `Ctrl/Cmd+Shift+G`: ungroup? (G toggles group per docs).
 - `R`/`C`/`W`/`D`/`T` select tools directly; `B` then `1–0`/`-` selects Pan, Object, Rectangle, Circle, Path, Polygon, Wall, Door, Stairs or Text.
 - `E` toggles draw/erase; `S` toggles snap; `Shift+S` then `1–9` sets the division; `Shift+R` toggles rough mode.
+- `G` groups/ungroups the selection; arrows nudge by `0.1` cell (Shift = `1`); `[`/`]` send to back/front; `Ctrl/Cmd+C`/`X`/`V` copy, cut and paste objects or selected geometry.
 - Space+drag and middle-mouse drag pan temporarily; `=`/`+` zoom in and `-`/`_` zoom out from the viewport centre.
 - `Escape`: cancel current gesture → clear selection → close panel.
 - `Enter`: confirm multi-point shape/paste/text.
