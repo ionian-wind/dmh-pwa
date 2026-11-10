@@ -354,3 +354,24 @@ describe('map studio circle and regular polygon geometry', () => {
     expect(shapeToPolygon(hex)?.[0]).toHaveLength(7);
   });
 });
+
+describe('map studio smooth polygons', () => {
+  it('subdivides polygon edges into a curved closed ring', () => {
+    const smooth: PolygonShape = {
+      id: 'smooth',
+      operation: 'add',
+      shape: {
+        kind: 'polygon',
+        points: [
+          [0, 0],
+          [4, 0],
+          [4, 4],
+          [0, 4],
+        ],
+        rough: 0,
+        smooth: true,
+      },
+    };
+    expect(shapeToPolygon(smooth)?.[0]?.length).toBeGreaterThan(30);
+  });
+});

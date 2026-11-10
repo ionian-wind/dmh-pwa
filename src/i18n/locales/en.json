@@ -1193,6 +1193,7 @@
     "point": "Point",
     "edge": "Edge",
     "radiusCells": "{radius} cells",
+    "smooth": "Smooth",
     "duplicate": "Duplicate",
     "bringForward": "Bring forward",
     "sendBackward": "Send backward",

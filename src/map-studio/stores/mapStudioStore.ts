@@ -66,6 +66,7 @@ export const useMapStudioStore = defineStore('mapStudio', () => {
     wallWidth: 0.08,
     sides: 1,
     drawTo: 'point',
+    smooth: false,
   });
   const undoStack = shallowRef<StudioMap[]>([]);
   const redoStack = shallowRef<StudioMap[]>([]);
@@ -264,7 +265,7 @@ export const useMapStudioStore = defineStore('mapStudio', () => {
         kind: 'polygon',
         points,
         rough: toolSettings.value.rough,
-        smooth: false,
+        smooth: toolSettings.value.smooth,
       },
     });
   }

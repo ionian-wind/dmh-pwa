@@ -264,6 +264,7 @@ export interface ToolSettings {
   wallWidth: number;
   sides: number;
   drawTo: 'point' | 'edge';
+  smooth: boolean;
 }
 
 export type StudioTool =

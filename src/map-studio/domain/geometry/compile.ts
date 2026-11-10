@@ -132,6 +132,36 @@ function expandPath(points: Point[], radius: number, closed: boolean): Polygon {
   return [ring];
 }
 
+function smoothClosedRing(points: Pair[], samples = 10): Pair[] {
+  const ring: Pair[] = [];
+  const count = points.length;
+  for (let index = 0; index < count; index += 1) {
+    const p0 = points[(index - 1 + count) % count];
+    const p1 = points[index];
+    const p2 = points[(index + 1) % count];
+    const p3 = points[(index + 2) % count];
+    for (let sample = 0; sample < samples; sample += 1) {
+      const t = sample / samples;
+      const t2 = t * t;
+      const t3 = t2 * t;
+      ring.push([
+        0.5 *
+          (2 * p1[0] +
+            (-p0[0] + p2[0]) * t +
+            (2 * p0[0] - 5 * p1[0] + 4 * p2[0] - p3[0]) * t2 +
+            (-p0[0] + 3 * p1[0] - 3 * p2[0] + p3[0]) * t3),
+        0.5 *
+          (2 * p1[1] +
+            (-p0[1] + p2[1]) * t +
+            (2 * p0[1] - 5 * p1[1] + 4 * p2[1] - p3[1]) * t2 +
+            (-p0[1] + 3 * p1[1] - 3 * p2[1] + p3[1]) * t3),
+      ]);
+    }
+  }
+  ring.push(ring[0]);
+  return ring;
+}
+
 export function shapeToPolygon(shape: DungeonShape): Polygon | null {
   const data = shape.shape;
   const seed = shape.seed ?? hashValue(shape.id);
@@ -179,8 +209,10 @@ export function shapeToPolygon(shape: DungeonShape): Polygon | null {
   }
   if (data.kind === 'polygon') {
     if (data.points.length < 3) return null;
-    const ring = data.points.map(([x, y]) => [x, y] as Pair);
-    ring.push([...ring[0]] as Pair);
+    const points = data.points.map(([x, y]) => [x, y] as Pair);
+    const ring = data.smooth
+      ? smoothClosedRing(points)
+      : [...points, [...points[0]] as Pair];
     return finish([ring], data.rough);
   }
   return null;

@@ -170,11 +170,11 @@ Adjacent rooms: separate adds union; touching edges merge, shared wall disappear
 
 ## 10. Polygon tool
 
-- Click points; double-click/Enter closes and commits; `Z` removes last point.
-- Snap off allows freehand drag like path but without radius expansion (polygon fill).
-- Smooth mode curves edges; closing back to the start point or double-click.
+- Click points; double-click/Enter closes and commits; clicking the first point also closes; `Z` removes the last point.
+- Snap off allows freehand drag; pointer positions are sampled and committed as one polygon fill.
+- Smooth mode uses a closed Catmull-Rom curve through the placed points.
 - Erase mode subtracts.
-- Rough mode as above.
+- Rough mode uses the shared rough level.
 
 ## 11. Wall tool
 

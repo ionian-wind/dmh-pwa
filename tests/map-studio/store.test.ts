@@ -133,11 +133,16 @@ describe('map studio shape helpers', () => {
       sides: 6,
       drawTo: 'edge',
     });
+    store.toolSettings.smooth = true;
     store.addPolygon([
       [0, 0],
       [2, 0],
       [2, 2],
     ]);
+    expect(store.activeLayer?.shapes.at(-1)?.shape).toMatchObject({
+      kind: 'polygon',
+      smooth: true,
+    });
     store.addPolygon([[0, 0]]);
     expect(
       (store.activeLayer?.shapes ?? []).map((shape) => shape.shape.kind),

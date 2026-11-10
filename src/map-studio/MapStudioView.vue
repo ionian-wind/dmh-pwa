@@ -405,6 +405,12 @@ async function applyToLocation(): Promise<void> {
           :label="t('mapStudio.rough')"
           class="studio-division"
         />
+        <QToggle
+          v-if="store.tool === 'polygon'"
+          v-model="store.toolSettings.smooth"
+          dense
+          :label="t('mapStudio.smooth')"
+        />
         <QInput
           v-if="store.tool === 'path'"
           v-model.number="store.toolSettings.pathRadius"

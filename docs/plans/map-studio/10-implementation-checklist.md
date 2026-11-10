@@ -49,7 +49,7 @@ Status: **in progress — editor surface, object interactions, shape selection, 
 - [x] Rectangle tool: erase, rough, corner radius
 - [x] Circle / regular polygon tool: sides slider/input, 1 = circle, point/edge orientation, live radius label, `[`/`]` and digit shortcuts
 - [x] Path tool (click points, radius; freehand/smooth still pending)
-- [x] Polygon tool
+- [x] Polygon tool: click points, double-click/Enter close, click-first-point close, freehand drag when snap is off, smooth curved walls
 - [x] Wall tool (points; dash/smooth still pending)
 - [x] Draw/erase mode, snap/division, corner radius and rough levels
 - [x] Undo/redo for every drawing mutation
@@ -122,3 +122,4 @@ Status: **in progress — editor surface, object interactions, shape selection, 
 | 2026-11-10 | Scope cleanup                | Moved random dungeon generation out of the implementation plan and milestones into `proposals/random-dungeon.md`; current scope is the editor, styling, lighting/fog and advanced IO                                                                          |
 | 2026-11-10 | Multi-select batch panel     | Show shared properties for a multi-selection, mark mixed values, and provide batch duplicate/order/flip/delete actions (2064 tests / 248 files; coverage branches 87.02%)                                                                                     |
 | 2026-11-10 | Circle tool parity           | Add sides (1 = circle, 3+ = regular polygon), point/edge orientation, snapped center/radius, live radius label, real polygon preview, and sides/rough shortcuts                                                                                               |
+| 2026-11-10 | Polygon tool parity          | Add snap-off freehand polygons, close by clicking the first point, Enter/Z editing, and smooth curved polygon rings                                                                                                                                           |

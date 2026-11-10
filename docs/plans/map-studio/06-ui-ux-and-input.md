@@ -191,6 +191,7 @@ Each panel is independent and remembers its scroll/expanded sections.
   - Mobile: bottom sheet.
 - Settings are grouped: Mode/Snap/Division universal; tool-specific sections; a “Reset tool settings” action.
 - Circle/regular polygon adds a Sides slider plus numeric input (1 = circle) and a Draw to selector (Point or Edge).
+- Polygon adds a Smooth toggle; with Snap off, dragging draws a freehand polygon.
 - Sliders and number inputs have paired controls; units shown in cells (and optional ft/m via project settings).
 - Keyboard shortcuts are shown in tooltips.
 

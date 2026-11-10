@@ -441,6 +441,14 @@ describe('MapStudioView UI', () => {
     wrapper.unmount();
   });
 
+  it('shows the polygon smooth toggle', async () => {
+    const { wrapper, store } = await mountView();
+    store.setTool('polygon');
+    await flushPromises();
+    expect(wrapper.text()).toContain('Smooth');
+    wrapper.unmount();
+  });
+
   it('shows circle sides and draw-to controls', async () => {
     const { wrapper, store } = await mountView();
     store.setTool('circle');

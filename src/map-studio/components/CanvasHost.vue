@@ -75,6 +75,7 @@ let drag:
     }
   | { kind: 'rectangle'; start: Point }
   | { kind: 'circle'; center: Point }
+  | { kind: 'polygon-freehand'; points: Point[]; lastScreen: Point }
   | { kind: 'object'; id: string; start: Point; last: Point }
   | { kind: 'marquee'; start: Point }
   | {
@@ -281,6 +282,26 @@ function onPointerDown(event: PointerEvent): void {
   }
   if (['polygon', 'path', 'wall'].includes(props.tool)) {
     const point = renderer.value.screenToWorld(sx, sy);
+    if (props.tool === 'polygon' && polygonPoints.value.length >= 3) {
+      const vp = renderer.value.getViewport();
+      const first = polygonPoints.value[0];
+      const fx = first[0] * 70 * vp.zoom + vp.x;
+      const fy = first[1] * 70 * vp.zoom + vp.y;
+      if (Math.hypot(sx - fx, sy - fy) < 14) {
+        finishPolygon();
+        return;
+      }
+    }
+    if (props.tool === 'polygon' && !props.settings.snap) {
+      const freehand: Point[] = [[point[0], point[1]]];
+      drag = {
+        kind: 'polygon-freehand',
+        points: freehand,
+        lastScreen: [sx, sy],
+      };
+      renderer.value.setPreview({ kind: 'polygon', points: freehand });
+      return;
+    }
     polygonPoints.value = [
       ...polygonPoints.value,
       [snap(point[0]), snap(point[1])],
@@ -316,6 +337,16 @@ function onPointerMove(event: PointerEvent): void {
       x: drag.viewport.x + sx - drag.startX,
       y: drag.viewport.y + sy - drag.startY,
     });
+    return;
+  }
+  if (drag.kind === 'polygon-freehand') {
+    if (Math.hypot(sx - drag.lastScreen[0], sy - drag.lastScreen[1]) < 4) {
+      return;
+    }
+    const point = renderer.value.screenToWorld(sx, sy);
+    drag.points.push([point[0], point[1]]);
+    drag.lastScreen = [sx, sy];
+    renderer.value.setPreview({ kind: 'polygon', points: drag.points });
     return;
   }
   const current = renderer.value.screenToWorld(sx, sy);
@@ -461,6 +492,19 @@ function onPointerMovePolygon(event: PointerEvent): void {
 function onPointerUp(event: PointerEvent): void {
   if (!renderer.value || !drag) return;
   const [sx, sy] = localPoint(event);
+  if (drag.kind === 'polygon-freehand') {
+    const current = renderer.value.screenToWorld(sx, sy);
+    drag.points.push([current[0], current[1]]);
+    renderer.value.setPreview(null);
+    if (drag.points.length >= 3) {
+      emit(
+        'polygon',
+        drag.points.map(([x, y]) => [x, y] as [number, number]),
+      );
+    }
+    drag = null;
+    return;
+  }
   if (drag.kind === 'marquee') {
     const current = renderer.value.screenToWorld(sx, sy);
     const x1 = Math.min(drag.start[0], current[0]);
@@ -574,7 +618,26 @@ watch(
 );
 
 function onKeyDown(event: KeyboardEvent): void {
-  if (event.key === 'Escape') cancelGesture();
+  if (event.key === 'Escape') {
+    cancelGesture();
+    return;
+  }
+  if (props.tool === 'polygon' && polygonPoints.value.length > 0) {
+    if (event.key === 'Enter') {
+      event.preventDefault();
+      finishPolygon();
+      return;
+    }
+    if (event.key.toLowerCase() === 'z') {
+      event.preventDefault();
+      polygonPoints.value = polygonPoints.value.slice(0, -1);
+      renderer.value?.setPreview(
+        polygonPoints.value.length
+          ? { kind: 'polygon', points: polygonPoints.value }
+          : null,
+      );
+    }
+  }
 }
 
 function onWheel(event: WheelEvent): void {
