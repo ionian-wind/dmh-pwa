@@ -21,6 +21,9 @@ These are intentionally outside the current implementation scope. They are kept
 for future consideration and are not tracked as active tasks.
 
 - [proposals/random-dungeon.md](proposals/random-dungeon.md) — procedural dungeon generator.
+- [proposals/ds-import-export.md](proposals/ds-import-export.md) — Dungeon Scrawl `.ds` interoperability.
+- [proposals/generator-imports.md](proposals/generator-imports.md) — Watabou and donjon imports.
+- [proposals/isometric-hex-grids.md](proposals/isometric-hex-grids.md) — isometric view and hex grids; isometric is out of current scope.
 
 ## Plan status
 

@@ -79,6 +79,9 @@ stage
 
 ### Isometric
 
+> **Deferred proposal — isometric is not in current scope.** See
+> `proposals/isometric-hex-grids.md`.
+
 - Apply a 2D isometric projection to `world` (scale/skew) so orthogonal document data renders in isometric.
 - Input inverse-transforms screen points into document coordinates.
 - Walls can be extruded visually by rendering a duplicated offset wall layer with darker color + vertical connectors for a simple 2.5D look. This is a render-only effect; geometry stays planar.
@@ -252,13 +255,13 @@ Rules:
 
 ## 15. Performance budgets and techniques
 
-| Scenario | Target |
-| --- | --- |
-| Open 30×30 map | < 1 s to interactive |
-| Pan/zoom 500 shapes | 60 fps desktop, 30+ fps mobile |
-| 5,000 shapes | 30+ fps desktop with static layer cache |
+| Scenario                | Target                                          |
+| ----------------------- | ----------------------------------------------- |
+| Open 30×30 map          | < 1 s to interactive                            |
+| Pan/zoom 500 shapes     | 60 fps desktop, 30+ fps mobile                  |
+| 5,000 shapes            | 30+ fps desktop with static layer cache         |
 | Lighting with 16 lights | 60 fps desktop, 30 fps mobile without occlusion |
-| Export 50×50 @ 140 ppc | < 10 s desktop, warn if browser limit |
+| Export 50×50 @ 140 ppc  | < 10 s desktop, warn if browser limit           |
 
 Techniques:
 

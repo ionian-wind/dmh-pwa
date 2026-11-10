@@ -61,7 +61,7 @@ Status: **in progress — editor surface, object interactions, shape selection, 
 - [x] Layer create/rename/reorder/delete/folders (drag-sorting with `@vue-dnd-kit/core` v3)
 - [x] Explicit add-folder button, per-layer menu (rename, duplicate, front/back, move to root, delete), double-click rename, topmost-first order, scrolling layer tree separate from settings
 - [x] Folder rows use `folder-open`/`folder` icons and toggle on row click (no separate chevron)
-- [x] Layer settings for Dungeon/Background/Images/folders: opacity, blend mode, floor/walls, blocks-light, grid colour/width, background colour/isometric
+- [x] Layer settings for Dungeon/Background/Images/folders: opacity, blend mode, floor/walls, blocks-light, grid colour/width, background colour
 - [x] Object tool: click/Shift-click selection, marquee, grouped selection, live drag, group resize/rotate, nudge, copy/paste, context menu, z-order
 - [x] Grouping/ungrouping, z-order, flip, duplicate and object context menu
 - [x] Multi-object selection: combined selection bounds, group resize and group rotate
@@ -73,14 +73,12 @@ Status: **in progress — editor surface, object interactions, shape selection, 
 - [x] Stairs tool: three-point placement, steps-per-cell, stroke, rough, bracket/digit shortcuts, object settings
 - [x] Geometry select tool: region select, mini menu, copy/cut/delete, paste preview with move/resize/rotate/flip, named Clipboard panel
 - [x] Local library, autosave, multiple maps (crash recovery pending)
-- [ ] `.ds` import/export baseline
 
 ## M3 — Styling
 
 - [ ] Dungeon, world-building and custom presets
 - [ ] Hatching, shading, shadows and blend modes
 - [ ] Floor/background textures and paper overlay
-- [ ] Isometric and hex grids
 - [ ] Static layer render textures and performance pass
 
 ## M4 — Lighting and fog
@@ -92,7 +90,6 @@ Status: **in progress — editor surface, object interactions, shape selection, 
 
 ## M5 — Advanced IO
 
-- [ ] Watabou and donjon imports
 - [x] PDF and UVTT export
 - [x] Infinite canvas: viewport-driven background/grid, unlimited pan/zoom, content-bounds export and fit
 - [x] Map-studio view split into header, presets, layers, layer settings and object settings components
@@ -138,3 +135,4 @@ Status: **in progress — editor surface, object interactions, shape selection, 
 | 2026-11-10 | Door gaps and UVTT                 | Add independent door endpoint handles, UVTT portal export, and finish the left-sidebar tool settings layout                                                                                                                                                   |
 | 2026-11-10 | Layer parity fixes                 | Correct topmost-first layer order, double-click rename, duplicate/front/back, lock enforcement, selectable background/images/folder settings, blend mode, blocks-light and background grid controls (2103 tests / 251 files; coverage branches 87.01%)        |
 | 2026-11-10 | Layer multi-select and canvas sync | Add Shift/Ctrl layer selection, bulk duplicate/delete/group/lock, resizable Layers panel, and canvas highlight for selected layer objects/geometry (2111 tests / 252 files; coverage branches 87.00%)                                                         |
+| 2026-11-10 | Scope cleanup                      | Move `.ds` import/export, Watabou/donjon imports and isometric/hex-grid work to deferred proposals; remove isometric from current UI/scope (2111 tests / 252 files; coverage branches 87.02%)                                                                 |

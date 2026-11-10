@@ -119,9 +119,6 @@ describe('StudioLayerSettings', () => {
     const colors = wrapper.findAll('input[type="color"]');
     await colors[0].setValue('#abcdef');
     expect(store.map?.background.style.color).toBe('#abcdef');
-    const checks = wrapper.findAll('input[type="checkbox"]');
-    await checks[0].setValue(true);
-    expect(store.map?.settings.isometric).toBe(true);
     await colors[1].setValue('#112233');
     expect(store.map?.grid.color).toBe('#112233');
     const numbers = wrapper.findAll('input[type="number"]');

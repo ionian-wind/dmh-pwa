@@ -796,15 +796,6 @@ export const useMapStudioStore = defineStore('mapStudio', () => {
     });
   }
 
-  function setIsometric(isometric: boolean): void {
-    const current = map.value;
-    if (!current) return;
-    commit({
-      ...current,
-      settings: { ...current.settings, isometric },
-    });
-  }
-
   function setLayerStyle(layerId: string, style: DungeonLayerStyle): void {
     const current = map.value;
     if (!current) return;
@@ -1868,7 +1859,6 @@ export const useMapStudioStore = defineStore('mapStudio', () => {
     setBackgroundOpacity,
     setGridColor,
     setGridWidth,
-    setIsometric,
     setLayerStyle,
     setLayerOpacity,
     undo,

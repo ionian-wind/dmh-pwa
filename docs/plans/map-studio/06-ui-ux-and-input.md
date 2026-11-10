@@ -63,7 +63,7 @@
 
 ### File
 
-- New map (project), New project, Open library, Save, Save as, Import `.ds`, Import image(s), Export, Apply to location, Return to library.
+- New map (project), New project, Open library, Save, Save as, Import image(s), Export, Apply to location, Return to library. `.ds` import is a deferred proposal.
 - Recent: last used maps (local).
 - Save status and “Saved to device” text.
 
@@ -73,7 +73,7 @@
 
 ### View
 
-- Theme (system/light/dark), Hide UI, Show grid, Show all grids, Isometric, Fit to map, Zoom 100%, Zoom to selection, Show fog preview.
+- Theme (system/light/dark), Hide UI, Show grid, Show all grids, Fit to map, Zoom 100%, Zoom to selection. Isometric is a deferred proposal.
 
 ### Help
 
@@ -153,7 +153,7 @@ Each panel is independent and remembers its scroll/expanded sections.
 ### Maps panel
 
 - Project map list; add, rename, duplicate, delete, reorder.
-- Import maps from another `.ds` file; thumbnails.
+- Import image assets; `.ds` import is a deferred proposal.
 - Current map highlighted.
 
 ## 7. Right sidebar: Layers and Layer Settings
@@ -175,7 +175,7 @@ Each panel is independent and remembers its scroll/expanded sections.
 - Header changes with selection: layer name or “N objects selected”.
 - Sections collapse independently; visibility eyes on sections.
 - Dungeon layer: Opacity, Floor texture, Walls, Floor, Grid, Shadow, Hatching, Shading, Advanced.
-- Background: Opacity, Color, Isometric, Background texture, Grid.
+- Background: Opacity, Colour, Background texture, Grid. Isometric is out of current scope.
 - Fog: Opacity, Fog color, Blend, Advanced.
 - Object: type-specific fields (image tint/shadow, text typography, door, stairs, light).
 - Background: opacity, colour, isometric, grid colour/width.

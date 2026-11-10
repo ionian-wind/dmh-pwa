@@ -10,7 +10,8 @@ Updated 2026-11-10. This is a snapshot, not a replacement for the detailed table
 
 - **Implemented:** editor shell, library and multi-map projects, Pixi canvas, infinite canvas, pan/zoom/fit, background/grid, dungeon presets, rectangle/circle/polygon/path/wall tools, draw/erase, snapping, rough and corner radius, undo/redo, autosave, PNG/WebP/JPG/PDF export, apply-to-location, text/door/stairs/image objects, object selection/move/resize/rotate, multi-object selection with combined bounds and group resize/rotate, marquee selection, shape selection, layer tree with folders and drag sorting, layer visibility/lock/opacity/floor/wall/grid settings, touch/pointer input foundation.
 - **Partial:** image workflow (upload and placement exist, no image library/favorites), text editing (prompt-based, not inline), door/stairs styling (variants/steps only), presets (built-in only, no custom preset management), layer/object context menus (core actions only), grouping and clipboard, mobile layouts.
-- **Not implemented:** UVTT export, `.ds` import/export, custom textures, hatching/shading/shadows/blend modes, lighting/fog, touch-first sheets, crash recovery UI, onboarding.
+- **Not implemented:** custom textures, hatching/shading/shadows, lighting/fog, touch-first sheets, crash recovery UI, onboarding.
+- **Deferred proposals:** `.ds` import/export, Watabou/donjon imports, isometric view and hex grids. See `proposals/`.
 - **Deferred proposal:** random dungeon generation is documented in [proposals/random-dungeon.md](proposals/random-dungeon.md) and is not part of the current implementation task.
 
 ## 1. Editor shell and navigation
@@ -18,9 +19,9 @@ Updated 2026-11-10. This is a snapshot, not a replacement for the detailed table
 | ID       | Feature                      | Behavior to match                                                                           | Phase |
 | -------- | ---------------------------- | ------------------------------------------------------------------------------------------- | ----- |
 | SHELL-1  | Full-screen studio           | Editor owns the viewport with its own top menu, left panel, right panel and bottom toolbar. | P0    |
-| SHELL-2  | File menu                    | New map, open library, save `.ds`, save as `.ds`, import `.ds`, export.                     | P1    |
+| SHELL-2  | File menu                    | New map, open library, save/export. `.ds` save/import is a deferred proposal.               | P1    |
 | SHELL-3  | Edit menu                    | Undo, redo, cut/copy/paste, delete, duplicate.                                              | P0/P1 |
-| SHELL-4  | View menu                    | Light/dark UI, hide UI, show/hide grids, isometric toggle.                                  | P1/P2 |
+| SHELL-4  | View menu                    | Light/dark UI, hide UI, show/hide grids. Isometric is a deferred proposal and out of scope. | P1    |
 | SHELL-5  | Help menu                    | Link to local feature documentation and keyboard shortcut reference.                        | P1    |
 | SHELL-6  | Save status                  | Unsaved / saving / saved / error indicator, plus local autosave state.                      | P1    |
 | SHELL-7  | Zoom controls                | Wheel, pinch, `+`/`-`, fit-to-map, 100%, zoom-to-selection.                                 | P0    |
@@ -131,7 +132,7 @@ Updated 2026-11-10. This is a snapshot, not a replacement for the detailed table
 | STYLE-7  | Hatching           | Variant, size, stroke color, width.                                                                                            | P2    |
 | STYLE-8  | Shading            | Size, roughness, fill color.                                                                                                   | P2    |
 | STYLE-9  | Blend modes        | Normal, Add, Multiply, Screen for layer/objects.                                                                               | P2    |
-| STYLE-10 | Background         | Color, opacity, dot/square/hex grid, isometric, background texture.                                                            | P1/P2 |
+| STYLE-10 | Background         | Color, opacity, square grid, background texture. Hex/isometric are deferred proposals.                                         | P1    |
 | STYLE-11 | Fog of war         | Opacity, fog color, draw/erase fog geometry, export visibility.                                                                | P2    |
 | STYLE-12 | Advanced/unpack    | A dungeon layer can be expanded into sublayers (floor/walls/grid/shadow/hatching/shading) with individual visibility/settings. | P3    |
 | STYLE-13 | Preset application | Apply preset to current layer or add new layer; preview.                                                                       | P1/P2 |
@@ -207,7 +208,7 @@ Updated 2026-11-10. This is a snapshot, not a replacement for the detailed table
 | ----- | ---------------------- | ---------------------------------------------------------------------------------- | ----- |
 | IO-1  | Local project library  | Thumbnail grid, recent first, new/open/rename/duplicate/delete.                    | P1    |
 | IO-2  | Autosave               | Debounced local save with status; crash recovery snapshots.                        | P1    |
-| IO-3  | Manual `.ds` save/open | ZIP with JSON; import/export best-effort.                                          | P2    |
+| IO-3  | Manual `.ds` save/open | Deferred proposal — see `proposals/ds-import-export.md`.                           | —     |
 | IO-4  | Multi-map project      | Add/rename/duplicate/delete maps inside a project; import maps from another `.ds`. | P2    |
 | IO-5  | PNG                    | Export area, px/cell, filename.                                                    | P1    |
 | IO-6  | WebP/JPG               | Same pipeline, quality controls for lossy.                                         | P2    |
@@ -215,8 +216,8 @@ Updated 2026-11-10. This is a snapshot, not a replacement for the detailed table
 | IO-8  | UVTT                   | Image + walls/doors/lights in Universal VTT JSON zip.                              | P3    |
 | IO-9  | Local share            | Export a bundle/link-free copy; no public URL.                                     | P2    |
 | IO-10 | Apply to location      | Bake image and update `LocationMap.fileId`; preserve markers/areas.                | P1    |
-| IO-11 | Watabou import         | Parse One Page Dungeon JSON into rooms/corridors/doors.                            | P3    |
-| IO-12 | donjon import          | Parse donjon map file; document known limitations.                                 | P3    |
+| IO-11 | Watabou import         | Deferred proposal — see `proposals/generator-imports.md`.                          | —     |
+| IO-12 | donjon import          | Deferred proposal — see `proposals/generator-imports.md`.                          | —     |
 | IO-13 | Print/PDF preview      | Show export bounds overlay and computed dimensions.                                | P2    |
 
 ## 12. Random dungeon (deferred proposal)

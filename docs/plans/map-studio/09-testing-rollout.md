@@ -39,7 +39,7 @@
 - Images panel with upload, drag/drop, favorites, search.
 - Selection tool + clipboard; copy/cut/paste geometry.
 - Local library, autosave, recovery, multiple maps.
-- Export: PNG/WebP/JPG, area, PPC; `.ds` import/export baseline.
+- Export: PNG/WebP/JPG/PDF/UVTT, area, PPC. `.ds` import/export is a deferred proposal.
 
 **Gate:** a decorated dungeon with doors, text and images is fully editable, undoable, autosaved, and reopenable.
 
@@ -47,7 +47,6 @@
 
 - Full preset library (dungeon + world-building + custom).
 - Hatching, shading, shadows, blend modes, floor/background textures, paper overlay.
-- Isometric and hex grids.
 - Masked textures/procedural patterns.
 - Performance pass: layer RenderTextures, hit-test spatial index, ticker on demand.
 
@@ -64,7 +63,6 @@
 
 ### M5 — Advanced IO (P2/P3)
 
-- Watabou/donjon imports. Random dungeon generation is a deferred proposal and is not part of this milestone.
 - PDF and UVTT export.
 - Multi-map project import/export, project bundles.
 
@@ -116,7 +114,7 @@
 ### 3.4 Rendering
 
 - [ ] Dungeon passes: floor/walls/grid/shadow/hatching/shading.
-- [ ] Background/grid/isometric/hex.
+- [ ] Background/grid.
 - [ ] Procedural textures + upload/cache.
 - [ ] Text rendering + editing overlay.
 - [ ] Image sprites/tint/shadows.
@@ -139,9 +137,9 @@
 - [ ] Library CRUD/thumbnails/search.
 - [ ] Autosave/recovery/snapshot retention.
 - [ ] Native bundle import/export.
-- [ ] `.ds` import/export.
+
 - [ ] PNG/WebP/JPG/PDF/UVTT.
-- [ ] Watabou/donjon import.
+
 - [ ] Apply-to-location and asset cleanup.
 - [ ] Backup/restore integration.
 
@@ -166,7 +164,6 @@
 - Normalize/migrate documents; corrupt/future/unknown fields.
 - Persistence repository with fake IndexedDB (existing setup).
 - Export math: area/PPC/page tiling/UVTT coordinates.
-- `.ds`/Watabou/donjon import fixtures.
 
 ### Integration (Vitest + Vue Test Utils)
 
@@ -184,7 +181,6 @@ Desktop:
 - Layer create/hide/lock/reorder; preset apply.
 - Object transform/group/z-order.
 - Save → reload → compare document/visual snapshot.
-- Import `.ds` fixture → edit → export.
 
 Mobile:
 

@@ -10,7 +10,7 @@ The studio is a **new feature**. It does not replace the current location map vi
 
 | Decision           | Choice                       | Consequence                                                                                                                                                                                                                                      |
 | ------------------ | ---------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Viewer integration | **Studio only**              | The existing `LocationMapTab` / OpenLayers viewer stays untouched. The studio exports an image and/or `.ds` file.                                                                                                                                |
+| Viewer integration | **Studio only**              | The existing `LocationMapTab` / OpenLayers viewer stays untouched. The studio exports an image/PDF/UVTT.                                                                                                                                         |
 | Feature scope      | **Everything local**         | Include editor features that Dungeon Scrawl sells as Pro: textures, lighting, custom presets and PDF/UVTT export. Replace cloud behavior with local equivalents. Random dungeon generation is a deferred proposal, not part of the current task. |
 | Existing map data  | **Drawings only**            | Markers, areas and entity links are not shown or edited in the studio.                                                                                                                                                                           |
 | Platforms          | **Full touch/mobile parity** | Every tool, panel and gesture must work on phones/tablets as well as desktop.                                                                                                                                                                    |
@@ -22,7 +22,7 @@ The studio is a **new feature**. It does not replace the current location map vi
 - Real-time multi-user editing.
 - Integrating studio objects with location markers/areas/entity links in this version.
 - Replacing the current OpenLayers viewer as part of this feature.
-- Exact binary compatibility with every historical `.ds` file edge case; `.ds` interoperability is best-effort and versioned.
+- `.ds` interoperability is a deferred proposal and not part of the current scope.
 
 ## 4. Relationship to the existing Maps feature
 
@@ -58,7 +58,7 @@ The studio also works standalone: users can create maps in the local library wit
 - All non-cloud features in the Dungeon Scrawl help center have a corresponding behavior, with the exceptions listed in `01-feature-parity.md`.
 - A user can create, save, reopen, duplicate and export a map entirely offline.
 - A finished drawing can be applied as a location background without breaking existing markers/areas.
-- `.ds` import/export covers the geometry, layers, images and lights that our model supports, with a clear compatibility report.
+- Export covers the current geometry, layers, images and doors through PNG/PDF/UVTT.
 
 ### Quality
 

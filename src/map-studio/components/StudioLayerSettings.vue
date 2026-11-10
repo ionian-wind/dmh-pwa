@@ -274,16 +274,6 @@ function setParent(event: Event): void {
           "
         />
       </label>
-      <label class="studio-field studio-field--check">
-        <input
-          type="checkbox"
-          :checked="store.map?.settings.isometric ?? false"
-          @change="
-            store.setIsometric(($event.target as HTMLInputElement).checked)
-          "
-        />
-        <span>{{ t('mapStudio.isometric') }}</span>
-      </label>
       <label class="studio-field">
         <span>{{ t('mapStudio.gridColour') }}</span>
         <input
