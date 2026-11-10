@@ -41,7 +41,8 @@ export type StudioPreview =
     }
   | { kind: 'circle'; cx: number; cy: number; radius: number }
   | { kind: 'polygon'; points: Point[] }
-  | { kind: 'line'; points: Point[] };
+  | { kind: 'line'; points: Point[] }
+  | { kind: 'polygons'; polygons: Point[][] };
 
 export class PixiStudioRenderer {
   private app: Application | null = null;
@@ -321,6 +322,15 @@ export class PixiStudioRenderer {
         this.previewLayer.moveTo(first[0] * ppc, first[1] * ppc);
         for (const [x, y] of rest) this.previewLayer.lineTo(x * ppc, y * ppc);
         this.previewLayer.stroke({ color: '#2d6fb3', width: 3 });
+      }
+    } else if (preview.kind === 'polygons') {
+      for (const polygon of preview.polygons) {
+        if (polygon.length < 3) continue;
+        const points = polygon.flatMap(([x, y]) => [x * ppc, y * ppc]);
+        this.previewLayer
+          .poly(points)
+          .fill({ color: '#4a90d9', alpha: 0.2 })
+          .stroke({ color: '#2d6fb3', width: 2 });
       }
     } else if (preview.points.length > 0) {
       const points = preview.points.flatMap(([x, y]) => [x * ppc, y * ppc]);

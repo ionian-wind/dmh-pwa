@@ -112,7 +112,7 @@ export const useMapStudioStore = defineStore('mapStudio', () => {
       (map.value?.layers.find((layer) => layer.type === 'images') as
         ImagesLayer | undefined) ?? null,
   );
-  const selectedObjects = computed(() =>
+  const selectedObjects = computed<StudioObject[]>(() =>
     (imagesLayer.value?.objects ?? []).filter((object) =>
       selectedObjectIds.value.includes(object.id),
     ),
@@ -567,17 +567,17 @@ export const useMapStudioStore = defineStore('mapStudio', () => {
     });
   }
 
-  function pasteGeometryClipboard(): void {
+  function pasteGeometryPolygons(polygons: Point[][]): void {
     const current = map.value;
     const layer = activeLayer.value;
-    if (!current || !layer || !geometryClipboard.value.length) return;
+    if (!current || !layer || !polygons.length) return;
     const operation = toolSettings.value.mode === 'erase' ? 'subtract' : 'add';
-    const shapes = geometryClipboard.value.map((points) => ({
+    const shapes = polygons.map((points) => ({
       id: generateId(),
       operation: operation as 'add' | 'subtract',
       shape: {
         kind: 'polygon' as const,
-        points: points.map(([x, y]) => [x + 0.5, y + 0.5] as Point),
+        points: points.map(([x, y]) => [x, y] as Point),
         rough: toolSettings.value.rough,
         smooth: toolSettings.value.smooth,
       },
@@ -590,6 +590,14 @@ export const useMapStudioStore = defineStore('mapStudio', () => {
           : entry,
       ),
     });
+  }
+
+  function pasteGeometryClipboard(): void {
+    pasteGeometryPolygons(
+      geometryClipboard.value.map((points) =>
+        points.map(([x, y]) => [x + 0.5, y + 0.5] as Point),
+      ),
+    );
   }
 
   function setObjects(objects: ImagesLayer['objects']): void {
@@ -663,6 +671,9 @@ export const useMapStudioStore = defineStore('mapStudio', () => {
   }
 
   const geometryClipboard = shallowRef<Point[][]>([]);
+  const geometryClips = shallowRef<
+    Array<{ id: string; name: string; polygons: Point[][] }>
+  >([]);
 
   const selectedGroupId = computed(() => {
     const objects = selectedObjects.value;
@@ -1250,6 +1261,45 @@ export const useMapStudioStore = defineStore('mapStudio', () => {
     selectObjects(copies.map((copy) => copy.id));
   }
 
+  function saveGeometryClipboard(name?: string): string | null {
+    if (!geometryClipboard.value.length) return null;
+    const id = generateId();
+    geometryClips.value = [
+      ...geometryClips.value,
+      {
+        id,
+        name: name?.trim() || `Clipboard ${geometryClips.value.length + 1}`,
+        polygons: geometryClipboard.value.map((points) =>
+          points.map(([x, y]) => [x, y] as Point),
+        ),
+      },
+    ];
+    return id;
+  }
+
+  function loadGeometryClipboard(id: string): Point[][] | null {
+    const clip = geometryClips.value.find((entry) => entry.id === id);
+    if (!clip) return null;
+    geometryClipboard.value = clip.polygons.map((points) =>
+      points.map(([x, y]) => [x, y] as Point),
+    );
+    return geometryClipboard.value;
+  }
+
+  function removeGeometryClip(id: string): void {
+    geometryClips.value = geometryClips.value.filter(
+      (entry) => entry.id !== id,
+    );
+  }
+
+  function renameGeometryClip(id: string, name: string): void {
+    const next = name.trim();
+    if (!next) return;
+    geometryClips.value = geometryClips.value.map((entry) =>
+      entry.id === id ? { ...entry, name: next } : entry,
+    );
+  }
+
   function reorderSelectedToEdge(direction: 'front' | 'back'): void {
     const ids = new Set(selectedObjectIds.value);
     const objects = [...(imagesLayer.value?.objects ?? [])].sort(
@@ -1355,6 +1405,7 @@ export const useMapStudioStore = defineStore('mapStudio', () => {
     selectedObjectIds,
     selectedGroupId,
     geometryClipboard,
+    geometryClips,
     selectedObjects,
     selectedShapeId,
     selectedShape,
@@ -1421,6 +1472,11 @@ export const useMapStudioStore = defineStore('mapStudio', () => {
     copyGeometrySelection,
     cutGeometrySelection,
     pasteGeometryClipboard,
+    pasteGeometryPolygons,
+    saveGeometryClipboard,
+    loadGeometryClipboard,
+    removeGeometryClip,
+    renameGeometryClip,
     renameLayer,
     removeLayer,
     moveLayer,

@@ -29,6 +29,13 @@ const groupButton = ref<{ x: number; y: number; grouped: boolean } | null>(
 );
 const geometrySelection = ref<Point[]>([]);
 const geometryMenu = ref<{ x: number; y: number } | null>(null);
+const pastePreview = ref<{
+  polygons: Point[][];
+  center: Point;
+  offset: Point;
+  scale: number;
+  rotation: number;
+} | null>(null);
 
 const props = defineProps<{
   map: StudioMap;
@@ -60,9 +67,11 @@ const emit = defineEmits<{
   (event: 'copyGeometry', points: Point[]): void;
   (event: 'cutGeometry', points: Point[]): void;
   (event: 'deleteGeometry', points: Point[]): void;
+  (event: 'commitPaste', polygons: Point[][]): void;
+  (event: 'cancelPaste'): void;
   (
     event: 'contextMenu',
-    payload: { x: number; y: number; objectId: string | null },
+    payload: { x: number; y: number; objectId: string | null; paste: boolean },
   ): void;
   (event: 'moveObject', delta: { dx: number; dy: number }): void;
   (event: 'beginObjectDrag'): void;
@@ -99,6 +108,19 @@ let drag:
       wall?: boolean;
     }
   | { kind: 'rough'; shape: DungeonShape; startScreen: Point }
+  | { kind: 'paste-move'; last: Point }
+  | {
+      kind: 'paste-resize';
+      center: Point;
+      startDistance: number;
+      startScale: number;
+    }
+  | {
+      kind: 'paste-rotate';
+      center: Point;
+      startAngle: number;
+      startRotation: number;
+    }
   | {
       kind: 'object';
       id: string;
@@ -225,6 +247,141 @@ function commitShape(shape: DungeonShape): void {
   }
 }
 
+function transformPastePolygons(): Point[][] {
+  const preview = pastePreview.value;
+  if (!preview) return [];
+  const cos = Math.cos(preview.rotation);
+  const sin = Math.sin(preview.rotation);
+  return preview.polygons.map((polygon) =>
+    polygon.map(([x, y]) => {
+      const dx = (x - preview.center[0]) * preview.scale;
+      const dy = (y - preview.center[1]) * preview.scale;
+      return [
+        preview.center[0] + dx * cos - dy * sin + preview.offset[0],
+        preview.center[1] + dx * sin + dy * cos + preview.offset[1],
+      ] as Point;
+    }),
+  );
+}
+
+function pasteBounds(): {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+} | null {
+  const polygons = transformPastePolygons();
+  const points = polygons.flat();
+  if (!points.length) return null;
+  const xs = points.map(([x]) => x);
+  const ys = points.map(([, y]) => y);
+  const minX = Math.min(...xs);
+  const minY = Math.min(...ys);
+  return {
+    x: minX,
+    y: minY,
+    width: Math.max(0.2, Math.max(...xs) - minX),
+    height: Math.max(0.2, Math.max(...ys) - minY),
+  };
+}
+
+function renderPastePreview(): void {
+  if (!renderer.value || !pastePreview.value) return;
+  renderer.value.setPreview({
+    kind: 'polygons',
+    polygons: transformPastePolygons(),
+  });
+  renderer.value.setSelection(pasteBounds());
+}
+
+function clearPastePreview(emitCancel = false): void {
+  pastePreview.value = null;
+  renderer.value?.setPreview(null);
+  renderer.value?.setSelection(null);
+  if (emitCancel) emit('cancelPaste');
+}
+
+function startGeometryPaste(polygons: Point[][]): void {
+  if (!polygons.length) return;
+  const points = polygons.flat();
+  const xs = points.map(([x]) => x);
+  const ys = points.map(([, y]) => y);
+  pastePreview.value = {
+    polygons: polygons.map((polygon) =>
+      polygon.map(([x, y]) => [x, y] as Point),
+    ),
+    center: [
+      (Math.min(...xs) + Math.max(...xs)) / 2,
+      (Math.min(...ys) + Math.max(...ys)) / 2,
+    ],
+    offset: [0.5, 0.5],
+    scale: 1,
+    rotation: 0,
+  };
+  renderPastePreview();
+}
+
+function handlePastePointerDown(sx: number, sy: number): void {
+  const bounds = pasteBounds();
+  if (!renderer.value || !bounds) return;
+  const vp = renderer.value.getViewport();
+  const toScreen = (x: number, y: number): [number, number] => [
+    x * 70 * vp.zoom + vp.x,
+    y * 70 * vp.zoom + vp.y,
+  ];
+  const center: Point = [
+    bounds.x + bounds.width / 2,
+    bounds.y + bounds.height / 2,
+  ];
+  const [rx, ry] = toScreen(
+    center[0],
+    bounds.y - Math.max(6, 8 / vp.zoom) / 70,
+  );
+  if (Math.hypot(sx - rx, sy - ry) < 20) {
+    drag = {
+      kind: 'paste-rotate',
+      center,
+      startAngle: Math.atan2(
+        renderer.value.screenToWorld(sx, sy)[1] - center[1],
+        renderer.value.screenToWorld(sx, sy)[0] - center[0],
+      ),
+      startRotation: pastePreview.value?.rotation ?? 0,
+    };
+    return;
+  }
+  const corners = [
+    [bounds.x, bounds.y],
+    [bounds.x + bounds.width, bounds.y],
+    [bounds.x, bounds.y + bounds.height],
+    [bounds.x + bounds.width, bounds.y + bounds.height],
+  ];
+  for (const corner of corners) {
+    const [hx, hy] = toScreen(corner[0], corner[1]);
+    if (Math.hypot(sx - hx, sy - hy) < 16) {
+      const point = renderer.value.screenToWorld(sx, sy);
+      drag = {
+        kind: 'paste-resize',
+        center,
+        startDistance: Math.max(
+          0.001,
+          Math.hypot(point[0] - center[0], point[1] - center[1]),
+        ),
+        startScale: pastePreview.value?.scale ?? 1,
+      };
+      return;
+    }
+  }
+  const point = renderer.value.screenToWorld(sx, sy);
+  if (
+    point[0] >= bounds.x &&
+    point[0] <= bounds.x + bounds.width &&
+    point[1] >= bounds.y &&
+    point[1] <= bounds.y + bounds.height
+  ) {
+    drag = { kind: 'paste-move', last: point };
+  }
+}
+
 function onPointerDown(event: PointerEvent): void {
   if (!renderer.value || !host.value || drag?.kind === 'rough') return;
   const [sx, sy] = localPoint(event);
@@ -240,6 +397,10 @@ function onPointerDown(event: PointerEvent): void {
     return;
   }
   if (event.button !== 0) return;
+  if (pastePreview.value) {
+    handlePastePointerDown(sx, sy);
+    return;
+  }
   if (props.tool === 'object') {
     const point = renderer.value.screenToWorld(sx, sy);
     const selection = selectedObjects();
@@ -460,6 +621,40 @@ function onPointerMove(event: PointerEvent): void {
     updateSelection();
     return;
   }
+  if (drag.kind === 'paste-move' && pastePreview.value) {
+    const current = renderer.value.screenToWorld(sx, sy);
+    pastePreview.value.offset = [
+      pastePreview.value.offset[0] + current[0] - drag.last[0],
+      pastePreview.value.offset[1] + current[1] - drag.last[1],
+    ];
+    drag.last = current;
+    renderPastePreview();
+    return;
+  }
+  if (drag.kind === 'paste-resize' && pastePreview.value) {
+    const current = renderer.value.screenToWorld(sx, sy);
+    const distance = Math.max(
+      0.001,
+      Math.hypot(current[0] - drag.center[0], current[1] - drag.center[1]),
+    );
+    pastePreview.value.scale = clamp(
+      drag.startScale * (distance / drag.startDistance),
+      0.1,
+      10,
+    );
+    renderPastePreview();
+    return;
+  }
+  if (drag.kind === 'paste-rotate' && pastePreview.value) {
+    const current = renderer.value.screenToWorld(sx, sy);
+    const angle = Math.atan2(
+      current[1] - drag.center[1],
+      current[0] - drag.center[0],
+    );
+    pastePreview.value.rotation = drag.startRotation + angle - drag.startAngle;
+    renderPastePreview();
+    return;
+  }
   if (drag.kind === 'rough') {
     const level = roughLevel(
       Math.hypot(sx - drag.startScreen[0], sy - drag.startScreen[1]),
@@ -593,6 +788,7 @@ function onPointerMove(event: PointerEvent): void {
     };
     return;
   }
+  if (drag.kind !== 'rectangle') return;
   const x1 = snap(Math.min(drag.start[0], current[0]));
   const y1 = snap(Math.min(drag.start[1], current[1]));
   const x2 = snap(Math.max(drag.start[0], current[0]));
@@ -631,6 +827,14 @@ function onPointerMovePolygon(event: PointerEvent): void {
 function onPointerUp(event: PointerEvent): void {
   if (!renderer.value || !drag) return;
   const [sx, sy] = localPoint(event);
+  if (
+    drag.kind === 'paste-move' ||
+    drag.kind === 'paste-resize' ||
+    drag.kind === 'paste-rotate'
+  ) {
+    drag = null;
+    return;
+  }
   if (drag.kind === 'rough') {
     const level = roughLevel(
       Math.hypot(sx - drag.startScreen[0], sy - drag.startScreen[1]),
@@ -939,6 +1143,39 @@ function zoomAtCenter(factor: number): void {
 }
 
 function onKeyDown(event: KeyboardEvent): void {
+  if (isEditableTarget(event.target)) return;
+  if (pastePreview.value) {
+    if (event.key === 'Enter') {
+      event.preventDefault();
+      confirmPaste();
+      return;
+    }
+    if (event.key === 'Escape') {
+      event.preventDefault();
+      cancelPaste();
+      return;
+    }
+    if (event.key.startsWith('Arrow')) {
+      event.preventDefault();
+      const step = event.shiftKey ? 1 : 0.1;
+      pastePreview.value.offset = [
+        pastePreview.value.offset[0] +
+          (event.key === 'ArrowLeft'
+            ? -step
+            : event.key === 'ArrowRight'
+              ? step
+              : 0),
+        pastePreview.value.offset[1] +
+          (event.key === 'ArrowUp'
+            ? -step
+            : event.key === 'ArrowDown'
+              ? step
+              : 0),
+      ];
+      renderPastePreview();
+      return;
+    }
+  }
   if (event.code === 'Space' && !isEditableTarget(event.target)) {
     event.preventDefault();
     spacePressed = true;
@@ -1004,6 +1241,10 @@ function onContextMenu(event: MouseEvent): void {
   event.preventDefault();
   if (!renderer.value) return;
   const [sx, sy] = localPoint(event);
+  if (pastePreview.value) {
+    emit('contextMenu', { x: sx, y: sy, objectId: null, paste: true });
+    return;
+  }
   const point = renderer.value.screenToWorld(sx, sy);
   const object = hitTestObject(
     props.map.layers
@@ -1011,7 +1252,38 @@ function onContextMenu(event: MouseEvent): void {
       .flatMap((layer) => (layer.type === 'images' ? layer.objects : [])),
     point,
   );
-  emit('contextMenu', { x: sx, y: sy, objectId: object?.id ?? null });
+  emit('contextMenu', {
+    x: sx,
+    y: sy,
+    objectId: object?.id ?? null,
+    paste: false,
+  });
+}
+
+function flipPaste(axis: 'x' | 'y'): void {
+  const preview = pastePreview.value;
+  if (!preview) return;
+  preview.polygons = preview.polygons.map((polygon) =>
+    polygon.map(
+      ([x, y]) =>
+        [
+          axis === 'x' ? preview.center[0] * 2 - x : x,
+          axis === 'y' ? preview.center[1] * 2 - y : y,
+        ] as Point,
+    ),
+  );
+  renderPastePreview();
+}
+
+function confirmPaste(): void {
+  if (!pastePreview.value) return;
+  const polygons = transformPastePolygons();
+  clearPastePreview();
+  emit('commitPaste', polygons);
+}
+
+function cancelPaste(): void {
+  if (pastePreview.value) clearPastePreview(true);
 }
 
 onMounted(async () => {
@@ -1070,7 +1342,13 @@ watch(() => props.selectedObjectId, updateSelection);
 watch(() => props.selectedObjectIds, updateSelection, { deep: true });
 watch(() => props.selectedShape, updateSelection);
 
-defineExpose({ clearGeometrySelection });
+defineExpose({
+  clearGeometrySelection,
+  startGeometryPaste,
+  flipPaste,
+  confirmPaste,
+  cancelPaste,
+});
 
 onBeforeUnmount(() => {
   resizeObserver?.disconnect();

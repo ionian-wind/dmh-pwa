@@ -195,9 +195,10 @@ Flow:
 2. On finish, the region is highlighted and a mini menu appears above it: Copy, Cut, Delete.
 3. Copy stores the intersection of each visible dungeon layer’s compiled geometry as clipboard polygons.
 4. Cut/Delete append a subtractive polygon for the selected region to each dungeon layer, removing the selected area and recalculating shared walls.
-5. `Ctrl/Cmd+V` pastes clipboard polygons into the active dungeon layer with a 0.5-cell offset; erase mode makes the pasted shapes subtractive.
-6. Select and Object tools are separate: geometry vs objects.
-7. Remaining gaps: paste preview with move/resize/rotate before commit, and the named Clipboard sidebar panel.
+5. `Ctrl/Cmd+V` enters paste preview: drag to move, corner handles to resize, rotate handle to rotate, right-click for Flip horizontal/vertical, Enter to confirm, Escape to cancel.
+6. Paste commits into the active dungeon layer; erase mode makes the pasted shapes subtractive.
+7. The Clipboard sidebar panel saves named geometry clips with thumbnails, and clicking a clip starts a paste preview.
+8. Select and Object tools are separate: geometry vs objects.
 
 ## 13. Door tool
 

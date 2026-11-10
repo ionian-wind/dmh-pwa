@@ -15,6 +15,7 @@ import StudioHeader from '@/map-studio/components/StudioHeader.vue';
 import StudioPresetsPanel from '@/map-studio/components/StudioPresetsPanel.vue';
 import StudioLayerSettings from '@/map-studio/components/StudioLayerSettings.vue';
 import StudioObjectSettings from '@/map-studio/components/StudioObjectSettings.vue';
+import StudioClipboardPanel from '@/map-studio/components/StudioClipboardPanel.vue';
 import { useMapStudioStore } from '@/map-studio/stores/mapStudioStore';
 import { confirm, prompt } from '@/dialogs';
 import {
@@ -228,6 +229,72 @@ describe('StudioObjectSettings', () => {
       offsetY: 0.2,
       opacity: 0.7,
     });
+    wrapper.unmount();
+  });
+});
+
+describe('StudioClipboardPanel', () => {
+  it('handles empty and cancelled clipboard saves', async () => {
+    const pinia = createPinia();
+    setActivePinia(pinia);
+    const store = useMapStudioStore();
+    store.setMap(createMap(createProject().id));
+    const empty = mount(StudioClipboardPanel, {
+      global: { plugins: [pinia] },
+    });
+    expect(empty.text()).toContain('Select geometry');
+    await (empty.vm as any).saveClipboard();
+    expect((empty.vm as any).thumbnailPoints([])).toBe('');
+    (empty.vm as any).pasteClip('missing');
+    expect(empty.emitted('paste')).toBeUndefined();
+    expect(store.geometryClips).toHaveLength(0);
+    empty.unmount();
+
+    store.addRectangle({ x: 0, y: 0, width: 4, height: 4 });
+    store.copyGeometrySelection([
+      [1, 1],
+      [3, 1],
+      [3, 3],
+      [1, 3],
+    ]);
+    promptMock.mockResolvedValueOnce(null);
+    const wrapper = mount(StudioClipboardPanel, {
+      global: { plugins: [pinia] },
+    });
+    await wrapper.find('[title="Save clipboard"]').trigger('click');
+    await flushPromises();
+    expect(store.geometryClips).toHaveLength(0);
+    wrapper.unmount();
+  });
+
+  it('saves, pastes and deletes clipboard clips', async () => {
+    const pinia = createPinia();
+    setActivePinia(pinia);
+    const store = useMapStudioStore();
+    store.setMap(createMap(createProject().id));
+    store.addRectangle({ x: 0, y: 0, width: 4, height: 4 });
+    store.copyGeometrySelection([
+      [1, 1],
+      [3, 1],
+      [3, 3],
+      [1, 3],
+    ]);
+    promptMock.mockResolvedValue('Room clip');
+    const wrapper = mount(StudioClipboardPanel, {
+      global: { plugins: [pinia] },
+    });
+    await wrapper.find('[title="Save clipboard"]').trigger('click');
+    await flushPromises();
+    expect(store.geometryClips[0].name).toBe('Room clip');
+    await wrapper.find('.studio-clipboard-row').trigger('click');
+    expect(wrapper.emitted('paste')?.[0]?.[0]).toEqual(
+      store.geometryClips[0].polygons,
+    );
+    await wrapper
+      .find('.studio-clipboard-row [aria-label="Delete"]')
+      .trigger('click');
+    expect(store.geometryClips).toHaveLength(0);
+    expect(wrapper.text()).toContain('Select geometry');
     wrapper.unmount();
   });
 });

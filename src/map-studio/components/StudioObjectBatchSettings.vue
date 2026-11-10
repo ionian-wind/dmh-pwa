@@ -6,7 +6,7 @@ import type { StudioObject } from '@/map-studio/domain/document/types';
 
 const { t } = useI18n();
 const store = useMapStudioStore();
-const objects = computed(() => store.selectedObjects);
+const objects = computed<StudioObject[]>(() => store.selectedObjects);
 const count = computed(() => objects.value.length);
 const type = computed<StudioObject['type'] | null>(() => {
   const first = objects.value[0];

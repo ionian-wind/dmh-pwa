@@ -6,6 +6,7 @@ import { Notify } from 'quasar';
 import CanvasHost from '@/map-studio/components/CanvasHost.vue';
 import StudioHeader from '@/map-studio/components/StudioHeader.vue';
 import StudioPresetsPanel from '@/map-studio/components/StudioPresetsPanel.vue';
+import StudioClipboardPanel from '@/map-studio/components/StudioClipboardPanel.vue';
 import StudioLayersPanel from '@/map-studio/components/StudioLayersPanel.vue';
 import { useMapStudioStore } from '@/map-studio/stores/mapStudioStore';
 import { useMapStudioAutosave } from '@/map-studio/composables/useMapStudioAutosave';
@@ -43,7 +44,7 @@ const pendingImage = ref<{ src: string; width: number; height: number } | null>(
   null,
 );
 const clipboard = ref<StudioObject[]>([]);
-const contextMenu = ref<{ x: number; y: number } | null>(null);
+const contextMenu = ref<{ x: number; y: number; paste: boolean } | null>(null);
 const geometryRegion = ref<Point[] | null>(null);
 const canvasHost = ref<InstanceType<typeof CanvasHost> | null>(null);
 useMapStudioAutosave(store);
@@ -96,7 +97,8 @@ useStudioHotkeys({
     }
   },
   pasteSelection: () => {
-    if (store.geometryClipboard.length) store.pasteGeometryClipboard();
+    if (store.geometryClipboard.length)
+      startGeometryPaste(store.geometryClipboard);
     else if (clipboard.value.length) store.pasteObjects(clipboard.value);
   },
   groupSelection: () => store.toggleGroupSelection(),
@@ -190,7 +192,9 @@ const textEditorInput = ref<HTMLInputElement | null>(null);
 const textEditorStyle = computed(() => {
   const id = editingTextId.value;
   if (!id || !renderer.value || !map.value) return {};
-  const object = store.imagesLayer?.objects.find((entry) => entry.id === id);
+  const object = (
+    store.imagesLayer?.objects as StudioObject[] | undefined
+  )?.find((entry: StudioObject) => entry.id === id);
   if (!object || object.type !== 'text') return {};
   const vp = renderer.value.getViewport();
   return {
@@ -205,7 +209,9 @@ const textEditorStyle = computed(() => {
 });
 
 function startTextEdit(id: string, isNew = false): void {
-  const object = store.imagesLayer?.objects.find((entry) => entry.id === id);
+  const object = (
+    store.imagesLayer?.objects as StudioObject[] | undefined
+  )?.find((entry: StudioObject) => entry.id === id);
   if (!object || object.type !== 'text') return;
   editingTextId.value = id;
   textDraft.value = object.text;
@@ -220,7 +226,9 @@ function commitTextEdit(): void {
   const id = editingTextId.value;
   if (!id) return;
   const value = textDraft.value;
-  const object = store.imagesLayer?.objects.find((entry) => entry.id === id);
+  const object = (
+    store.imagesLayer?.objects as StudioObject[] | undefined
+  )?.find((entry: StudioObject) => entry.id === id);
   editingTextId.value = null;
   if (!object || object.type !== 'text') return;
   if (!value.trim()) {
@@ -301,6 +309,22 @@ function editText(id: string): void {
   startTextEdit(id);
 }
 
+function startGeometryPaste(polygons: Point[][]): void {
+  store.selectObject(null);
+  store.selectShape(null);
+  geometryRegion.value = null;
+  canvasHost.value?.clearGeometrySelection();
+  canvasHost.value?.startGeometryPaste(polygons);
+}
+
+function onCommitPaste(polygons: Point[][]): void {
+  store.pasteGeometryPolygons(polygons);
+}
+
+function onCancelPaste(): void {
+  // Nothing to mutate: the preview lives only in the canvas.
+}
+
 function onSelectRegion(points: Point[]): void {
   geometryRegion.value = points;
 }
@@ -323,15 +347,16 @@ function showContextMenu(payload: {
   x: number;
   y: number;
   objectId: string | null;
+  paste: boolean;
 }): void {
-  if (payload.objectId) {
+  if (!payload.paste && payload.objectId) {
     const selected = store.selectedObjectIds;
     const keepSelection =
       selected.includes(payload.objectId) &&
       (selected.length === 1 || !!store.selectedGroupId);
     if (!keepSelection) store.selectObject(payload.objectId);
   }
-  contextMenu.value = { x: payload.x, y: payload.y };
+  contextMenu.value = { x: payload.x, y: payload.y, paste: payload.paste };
 }
 
 function contextAction(action: string): void {
@@ -342,6 +367,10 @@ function contextAction(action: string): void {
   else if (action === 'flip-x') store.flipSelectedObjects('x');
   else if (action === 'flip-y') store.flipSelectedObjects('y');
   else if (action === 'delete') store.removeSelectedObjects();
+  else if (action === 'paste-flip-x') canvasHost.value?.flipPaste('x');
+  else if (action === 'paste-flip-y') canvasHost.value?.flipPaste('y');
+  else if (action === 'paste-confirm') canvasHost.value?.confirmPaste();
+  else if (action === 'paste-cancel') canvasHost.value?.cancelPaste();
 }
 
 function chooseImage(): void {
@@ -763,6 +792,8 @@ async function applyToLocation(): Promise<void> {
           @copyGeometry="copyGeometry"
           @cutGeometry="cutGeometry"
           @deleteGeometry="deleteGeometry"
+          @commitPaste="onCommitPaste"
+          @cancelPaste="onCancelPaste"
           @contextMenu="showContextMenu"
           @pointerdown="contextMenu = null"
           @selectShape="store.selectShape"
@@ -792,33 +823,72 @@ async function applyToLocation(): Promise<void> {
           :style="{ left: `${contextMenu.x}px`, top: `${contextMenu.y}px` }"
           @pointerdown.stop
         >
-          <button type="button" @click="contextAction('duplicate')">
+          <template v-if="contextMenu.paste">
+            <button type="button" @click="contextAction('paste-flip-x')">
+              <QIcon name="tabler-flip-horizontal" size="16px" />
+              <span>{{ t('mapStudio.flipHorizontal') }}</span>
+            </button>
+            <button type="button" @click="contextAction('paste-flip-y')">
+              <QIcon name="tabler-flip-vertical" size="16px" />
+              <span>{{ t('mapStudio.flipVertical') }}</span>
+            </button>
+            <button type="button" @click="contextAction('paste-confirm')">
+              <QIcon name="tabler-check" size="16px" />
+              <span>{{ t('common.confirm') }}</span>
+            </button>
+            <button type="button" @click="contextAction('paste-cancel')">
+              <QIcon name="tabler-x" size="16px" />
+              <span>{{ t('common.cancel') }}</span>
+            </button>
+          </template>
+          <button v-else type="button" @click="contextAction('duplicate')">
             <QIcon name="tabler-copy" size="16px" />
             <span>{{ t('mapStudio.duplicate') }}</span>
           </button>
-          <button type="button" @click="contextAction('front')">
+          <button
+            v-if="!contextMenu.paste"
+            type="button"
+            @click="contextAction('front')"
+          >
             <QIcon name="tabler-arrow-up" size="16px" />
             <span>{{ t('mapStudio.bringToFront') }}</span>
           </button>
-          <button type="button" @click="contextAction('back')">
+          <button
+            v-if="!contextMenu.paste"
+            type="button"
+            @click="contextAction('back')"
+          >
             <QIcon name="tabler-arrow-down" size="16px" />
             <span>{{ t('mapStudio.sendToBack') }}</span>
           </button>
-          <button type="button" @click="contextAction('flip-x')">
+          <button
+            v-if="!contextMenu.paste"
+            type="button"
+            @click="contextAction('flip-x')"
+          >
             <QIcon name="tabler-flip-horizontal" size="16px" />
             <span>{{ t('mapStudio.flipHorizontal') }}</span>
           </button>
-          <button type="button" @click="contextAction('flip-y')">
+          <button
+            v-if="!contextMenu.paste"
+            type="button"
+            @click="contextAction('flip-y')"
+          >
             <QIcon name="tabler-flip-vertical" size="16px" />
             <span>{{ t('mapStudio.flipVertical') }}</span>
           </button>
-          <button type="button" @click="contextAction('delete')">
+          <button
+            v-if="!contextMenu.paste"
+            type="button"
+            @click="contextAction('delete')"
+          >
             <QIcon name="tabler-trash" size="16px" />
             <span>{{ t('common.delete') }}</span>
           </button>
         </div>
 
         <StudioPresetsPanel />
+        <StudioClipboardPanel @paste="startGeometryPaste" />
 
         <StudioLayersPanel />
       </div>

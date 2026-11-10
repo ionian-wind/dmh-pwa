@@ -70,7 +70,7 @@ Status: **in progress — editor surface, object interactions, shape selection, 
 - [x] Text tool: click-to-place inline editing, second-click edit, font/size/colour/alignment, drop shadow, object settings
 - [x] Door tool: two-point placement (variants pending)
 - [x] Stairs tool: three-point placement (style editing pending)
-- [x] Geometry select tool: region select, mini menu, copy/cut/delete, paste (preview transform and Clipboard panel pending)
+- [x] Geometry select tool: region select, mini menu, copy/cut/delete, paste preview with move/resize/rotate/flip, named Clipboard panel
 - [x] Local library, autosave, multiple maps (crash recovery pending)
 - [ ] `.ds` import/export baseline
 
@@ -130,3 +130,4 @@ Status: **in progress — editor surface, object interactions, shape selection, 
 | 2026-11-10 | Object tool validation       | Add Shift-click multi-select, groups (`G`), arrow nudging, copy/paste, `[`/`]` z-order and a right-click object context menu (2075 tests / 248 files; coverage branches 87.02%)                                                                               |
 | 2026-11-10 | Select tool validation       | Add separate Select tool with polygon/freehand regions, selection mini menu, geometry clipboard copy/cut/delete and draw/erase paste (2083 tests / 248 files; coverage branches 87.02%)                                                                       |
 | 2026-11-10 | Wall tool validation         | Add snap-off freehand walls, smooth curves, post-draw rough, dashed strokes with continuous dash phase, and width/dash tool settings (2083 tests / 248 files; coverage branches 87.02%)                                                                       |
+| 2026-11-10 | Clipboard and paste preview  | Add named clipboard clips with thumbnails, preview paste with move/resize/rotate/flip, Enter commit and Escape cancel                                                                                                                                         |

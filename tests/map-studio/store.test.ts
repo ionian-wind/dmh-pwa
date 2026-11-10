@@ -701,6 +701,7 @@ describe('map studio geometry clipboard', () => {
   it('copies, cuts and pastes dungeon geometry', () => {
     const store = useMapStudioStore();
     store.setMap(createMap(createProject().id));
+    expect(store.saveGeometryClipboard()).toBeNull();
     store.addRectangle({ x: 0, y: 0, width: 4, height: 4 });
     const region: Array<[number, number]> = [
       [1, 1],
@@ -719,6 +720,18 @@ describe('map studio geometry clipboard', () => {
     store.toolSettings.mode = 'erase';
     store.pasteGeometryClipboard();
     expect(store.activeLayer!.shapes.at(-1)?.operation).toBe('subtract');
+
+    const clipId = store.saveGeometryClipboard('Room');
+    expect(clipId).toBeTruthy();
+    expect(store.geometryClips[0]).toMatchObject({ name: 'Room' });
+    store.renameGeometryClip(clipId!, 'Renamed room');
+    expect(store.geometryClips[0].name).toBe('Renamed room');
+    store.geometryClipboard = [];
+    expect(store.loadGeometryClipboard(clipId!)).toBeTruthy();
+    expect(store.geometryClipboard.length).toBeGreaterThan(0);
+    expect(store.loadGeometryClipboard('missing')).toBeNull();
+    store.removeGeometryClip(clipId!);
+    expect(store.geometryClips).toHaveLength(0);
   });
 });
 

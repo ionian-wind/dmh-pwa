@@ -3,12 +3,18 @@ import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { confirm, prompt } from '@/dialogs';
 import { useMapStudioStore } from '@/map-studio/stores/mapStudioStore';
+import type {
+  DungeonLayer,
+  StudioLayer,
+} from '@/map-studio/domain/document/types';
 
 const { t } = useI18n();
 const store = useMapStudioStore();
-const activeLayer = computed(() => store.activeLayer);
-const folders = computed(() =>
-  (store.map?.layers ?? []).filter((layer) => layer.type === 'folder'),
+const activeLayer = computed<DungeonLayer | null>(() => store.activeLayer);
+const folders = computed<StudioLayer[]>(() =>
+  (store.map?.layers ?? []).filter(
+    (layer: StudioLayer) => layer.type === 'folder',
+  ),
 );
 
 async function renameLayer(): Promise<void> {
