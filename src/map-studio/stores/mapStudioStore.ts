@@ -369,6 +369,24 @@ export const useMapStudioStore = defineStore('mapStudio', () => {
     });
   }
 
+  function setLayerStructure(
+    layers: StudioLayer[],
+    expandedFolderId: string | null = null,
+  ): void {
+    const current = map.value;
+    if (!current) return;
+    commit({
+      ...current,
+      layers: layers.map((layer) =>
+        expandedFolderId &&
+        layer.id === expandedFolderId &&
+        layer.type === 'folder'
+          ? { ...layer, expanded: true }
+          : layer,
+      ),
+    });
+  }
+
   function moveLayerRelative(
     layerId: string,
     targetId: string,
@@ -406,10 +424,16 @@ export const useMapStudioStore = defineStore('mapStudio', () => {
     if (!layer || layer.type === 'background' || layer.type === 'images')
       return;
     const dungeons = current.layers.filter((entry) => entry.type === 'dungeon');
-    if (dungeons.length <= 1) return;
+    if (layer.type === 'dungeon' && dungeons.length <= 1) return;
     commit({
       ...current,
-      layers: current.layers.filter((entry) => entry.id !== layerId),
+      layers: current.layers
+        .filter((entry) => entry.id !== layerId)
+        .map((entry) =>
+          layer.type === 'folder' && entry.parentId === layerId
+            ? { ...entry, parentId: layer.parentId }
+            : entry,
+        ),
     });
     if (activeLayerId.value === layerId) {
       activeLayerId.value =
@@ -839,6 +863,7 @@ export const useMapStudioStore = defineStore('mapStudio', () => {
     toggleFolder,
     setLayerParent,
     moveLayerRelative,
+    setLayerStructure,
     renameLayer,
     removeLayer,
     moveLayer,

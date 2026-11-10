@@ -81,6 +81,8 @@ import svgEyeOff from '@tabler/icons/outline/eye-off.svg?raw';
 import svgFileDownload from '@tabler/icons/outline/file-download.svg?raw';
 import svgFlag from '@tabler/icons/outline/flag.svg?raw';
 import svgFolder from '@tabler/icons/outline/folder.svg?raw';
+import svgFolderPlus from '@tabler/icons/outline/folder-plus.svg?raw';
+import svgCornerUpLeft from '@tabler/icons/outline/corner-up-left.svg?raw';
 import svgGhost3 from '@tabler/icons/outline/ghost-3.svg?raw';
 import svgGift from '@tabler/icons/outline/gift.svg?raw';
 import svgGripVertical from '@tabler/icons/outline/grip-vertical.svg?raw';
@@ -248,6 +250,8 @@ const icons: Record<string, string> = {
   'file-download': svgPath(svgFileDownload),
   flag: svgPath(svgFlag),
   folder: svgPath(svgFolder),
+  'folder-plus': svgPath(svgFolderPlus),
+  'corner-up-left': svgPath(svgCornerUpLeft),
   'ghost-3': svgPath(svgGhost3),
   gift: svgPath(svgGift),
   'grip-vertical': svgPath(svgGripVertical),

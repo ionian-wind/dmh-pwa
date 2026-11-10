@@ -1201,6 +1201,7 @@
     "folder": "Folder",
     "noFolder": "No folder",
     "toggleFolder": "Collapse or expand folder",
+    "moveToRoot": "Move out of folder",
     "dropToRoot": "Drop here to move out of folders"
   }
 }

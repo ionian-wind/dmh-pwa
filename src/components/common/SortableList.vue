@@ -1,6 +1,6 @@
 <script setup lang="ts" generic="T extends Record<string, any>">
-import { computed } from 'vue';
-import { DnDOperations, useDroppable } from '@vue-dnd-kit/core';
+import { computed, useTemplateRef } from 'vue';
+import { makeSortableList } from '@vue-dnd-kit/core';
 import SortableItem from './SortableItem.vue';
 
 const props = withDefaults(
@@ -25,32 +25,24 @@ const emit = defineEmits<{
   (e: 'end', value: { oldIndex: number; newIndex: number }): void;
 }>();
 
-const { elementRef, isOvered } = useDroppable({
-  groups: props.groups,
-  disabled: props.disabled,
-  data: computed(() => ({ source: props.modelValue })),
-  events: {
-    onDrop: (store) => {
-      const dragged = [...store.draggingElements.value.values()][0];
-      const oldIndex = dragged?.data?.index ?? -1;
-      const item = dragged?.data?.item as T | undefined;
-      DnDOperations.applyTransfer(store);
-      const next = [...props.modelValue];
-      const newIndex =
-        item && props.itemKey
-          ? next.findIndex(
-              (entry) => entry[props.itemKey] === item[props.itemKey],
-            )
-          : oldIndex;
+const listRef = useTemplateRef<HTMLElement>('list');
+const model = computed({
+  get: () => props.modelValue,
+  set: (value: T[]) => emit('update:modelValue', value),
+});
+const group = computed(() => props.groups[0] ?? 'sortable-list');
 
-      // Pointer down/up without an actual positional change must not be
-      // treated as a sort. Besides avoiding redundant writes, this prevents a
-      // no-move click on a drag handle from resorting playback queues.
-      if (oldIndex < 0 || newIndex < 0 || oldIndex === newIndex) return;
-
-      emit('update:modelValue', next);
-      emit('end', { oldIndex, newIndex });
-    },
+const { items, isOver } = makeSortableList(listRef, {
+  items: model,
+  group: group.value,
+  strategy: 'vertical',
+  disabled: () => props.disabled,
+  onDrop: (event) => {
+    if (event.from.index === event.to.index && event.sameList) return;
+    emit('end', {
+      oldIndex: event.from.index,
+      newIndex: event.to.index,
+    });
   },
 });
 </script>
@@ -58,18 +50,16 @@ const { elementRef, isOvered } = useDroppable({
 <template>
   <component
     :is="tag"
-    ref="elementRef"
+    ref="list"
     class="sortable-list"
-    :class="{ 'sortable-list--over': isOvered }"
+    :class="{ 'sortable-list--over': isOver }"
   >
     <SortableItem
-      v-for="(item, index) in modelValue"
+      v-for="(item, index) in items"
       :key="item[itemKey]"
       :item="item"
-      :index="index"
-      :source="modelValue"
       :item-key="itemKey"
-      :groups="groups"
+      :index="index"
       :handle="handle"
       :disabled="disabled"
     >

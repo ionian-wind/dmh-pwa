@@ -1,4 +1,23 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+
+vi.mock('@vue-dnd-kit/core', async () => {
+  const { computed } = await import('vue');
+  return {
+    makeSortableList: (_target: any, options: any) => ({
+      items: options.items,
+      isOver: computed(() => false),
+      isAccepting: computed(() => false),
+    }),
+    makeSortableItem: () => ({
+      isDragging: computed(() => false),
+      isPlaceholder: computed(() => false),
+      selected: computed({ get: () => false, set: () => undefined }),
+      indicator: computed(() => null),
+      index: computed(() => 0),
+    }),
+  };
+});
+
 import { defineComponent, h, nextTick } from 'vue';
 import { mount, flushPromises } from '@vue/test-utils';
 import SortableList from '@/components/common/SortableList.vue';

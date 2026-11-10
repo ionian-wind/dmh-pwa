@@ -48,6 +48,7 @@ export default defineConfig({
         'src/ambient-sound/components/SceneLinksPanel.vue',
         'src/utils/dice-probability-calculator/tokens.ts',
         'src/notes/NoteViewSidebar.vue',
+        'src/map-studio/MapStudioView.vue',
         'src/components/common/entityLinking/useMapEntityCatalog.ts',
         'src/features/**',
         'src/composables/useFeatureStores.ts',

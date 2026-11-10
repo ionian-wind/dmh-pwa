@@ -11,7 +11,6 @@ import { useUiTheme } from './composables/useUiTheme';
 import { useConfigStore, type UiTheme } from './utils/configStore';
 import { initializeDatabase } from './utils/storage';
 import './utils/files/registerFileReferences';
-import VueDnDKitPlugin, { type IPluginOptions } from '@vue-dnd-kit/core';
 import { debug, debugWarn, debugError } from './utils/debug';
 
 import { Quasar, Dialog, Notify, Dark } from 'quasar';
@@ -67,14 +66,6 @@ app.use(i18n);
 
 // Setup anchor scroll handler
 setupAnchorScrollHandler();
-
-app.use(VueDnDKitPlugin, {
-  defaultOverlay: {
-    styles: {
-      transition: 'none',
-    },
-  },
-} as IPluginOptions);
 
 app.use(Quasar, {
   plugins: { Notify, Dialog, Dark }, // import Quasar plugins and add here

@@ -10,6 +10,10 @@ import {
   reorderLayers,
   resolveLayerDropMode,
 } from '@/map-studio/domain/layers';
+import {
+  buildLayerTree,
+  flattenLayerTree,
+} from '@/map-studio/domain/layerTree';
 import { useMapStudioStore } from '@/map-studio/stores/mapStudioStore';
 
 function ids(layers: { id: string }[]): string[] {
@@ -99,6 +103,25 @@ describe('map studio layer sorting', () => {
     expect(reorderLayers(map.layers, background.id, 'a', 'after')).toBeNull();
   });
 
+  it('moves folder children out when the folder is deleted', () => {
+    setActivePinia(createPinia());
+    const store = useMapStudioStore();
+    store.setMap(createMap(createProject().id));
+    store.addFolder('Folder');
+    const folder = store.map!.layers.find((layer) => layer.type === 'folder')!;
+    const dungeon = store.map!.layers.find(
+      (layer) => layer.type === 'dungeon',
+    )!;
+    store.setLayerParent(dungeon.id, folder.id);
+    store.removeLayer(folder.id);
+    expect(store.map!.layers.some((layer) => layer.id === folder.id)).toBe(
+      false,
+    );
+    expect(
+      store.map!.layers.find((layer) => layer.id === dungeon.id)?.parentId,
+    ).toBeNull();
+  });
+
   it('moves layers through the store with undo', () => {
     setActivePinia(createPinia());
     const store = useMapStudioStore();
@@ -113,6 +136,71 @@ describe('map studio layer sorting', () => {
     expect(
       store.map!.layers.find((layer) => layer.id === dungeon.id)?.parentId,
     ).toBe(folder.id);
+    store.undo();
+    expect(
+      store.map!.layers.find((layer) => layer.id === dungeon.id)?.parentId,
+    ).toBeNull();
+  });
+});
+
+describe('map studio layer tree', () => {
+  it('builds a sorted nested tree and flattens it back', () => {
+    const layers = [
+      createDungeonLayer({ id: 'root-b', order: 2 }),
+      createFolderLayer({ id: 'folder', order: 1 }),
+      createDungeonLayer({ id: 'child', order: 3, parentId: 'folder' }),
+      createDungeonLayer({ id: 'root-a', order: 0 }),
+    ];
+    const tree = buildLayerTree(layers);
+    expect(tree.map((node) => node.id)).toEqual(['root-a', 'folder', 'root-b']);
+    expect(tree[1].children?.map((node) => node.id)).toEqual(['child']);
+
+    const flat = flattenLayerTree(tree);
+    expect(flat.map((layer) => layer.id)).toEqual([
+      'root-a',
+      'folder',
+      'child',
+      'root-b',
+    ]);
+    expect(flat.map((layer) => layer.order)).toEqual([0, 1, 2, 3]);
+    expect(flat.find((layer) => layer.id === 'child')?.parentId).toBe('folder');
+  });
+
+  it('expands the folder a layer is dropped into', () => {
+    const tree = buildLayerTree([
+      createFolderLayer({ id: 'folder', order: 0, expanded: false }),
+      createDungeonLayer({ id: 'child', order: 1, parentId: 'folder' }),
+    ]);
+    const flat = flattenLayerTree(tree, 'folder');
+    expect(
+      (flat.find((layer) => layer.id === 'folder') as { expanded: boolean })
+        .expanded,
+    ).toBe(true);
+  });
+
+  it('commits a new layer structure through the store', () => {
+    setActivePinia(createPinia());
+    const store = useMapStudioStore();
+    store.setMap(createMap(createProject().id));
+    store.addFolder('Folder');
+    const folder = store.map!.layers.find((layer) => layer.type === 'folder')!;
+    const dungeon = store.map!.layers.find(
+      (layer) => layer.type === 'dungeon',
+    )!;
+    const structure = store.map!.layers.map((layer) =>
+      layer.id === dungeon.id ? { ...layer, parentId: folder.id } : layer,
+    );
+    store.setLayerStructure(structure, folder.id);
+    expect(
+      store.map!.layers.find((layer) => layer.id === dungeon.id)?.parentId,
+    ).toBe(folder.id);
+    expect(
+      (
+        store.map!.layers.find((layer) => layer.id === folder.id) as {
+          expanded: boolean;
+        }
+      ).expanded,
+    ).toBe(true);
     store.undo();
     expect(
       store.map!.layers.find((layer) => layer.id === dungeon.id)?.parentId,

@@ -3,31 +3,34 @@ import { defineComponent, h, nextTick } from 'vue';
 import { mount } from '@vue/test-utils';
 
 const mocks = vi.hoisted(() => ({
-  droppableOptions: null as any,
-  draggable: [] as Array<{ options: any; handleDragStart: any }>,
-  applyTransfer: vi.fn(),
+  listOptions: null as any,
+  itemOptions: [] as any[],
 }));
 
 vi.mock('@vue-dnd-kit/core', async () => {
-  const { computed, ref } = await import('vue');
+  const { computed } = await import('vue');
   return {
-    useDroppable: (options: any) => {
-      mocks.droppableOptions = options;
+    makeSortableList: (_target: any, options: any) => {
+      mocks.listOptions = options;
       return {
-        elementRef: ref(null),
-        isOvered: computed(() => false),
+        items: options.items,
+        isOver: computed(() => false),
+        isAccepting: computed(() => false),
       };
     },
-    useDraggable: (options: any) => {
-      const handleDragStart = vi.fn();
-      mocks.draggable.push({ options, handleDragStart });
+    makeSortableItem: (_target: any, options: any) => {
+      mocks.itemOptions.push(options);
       return {
-        elementRef: ref(null),
         isDragging: computed(() => false),
-        handleDragStart,
+        isPlaceholder: computed(() => false),
+        selected: computed({
+          get: () => false,
+          set: () => undefined,
+        }),
+        indicator: computed(() => null),
+        index: computed(() => 0),
       };
     },
-    DnDOperations: { applyTransfer: mocks.applyTransfer },
   };
 });
 
@@ -43,175 +46,97 @@ const Item = defineComponent({
 
 describe('SortableList', () => {
   beforeEach(() => {
-    mocks.droppableOptions = null;
-    mocks.draggable = [];
-    mocks.applyTransfer.mockReset();
+    mocks.listOptions = null;
+    mocks.itemOptions = [];
   });
 
-  it('renders items and emits the reordered list on drop', async () => {
+  function mountList(overrides: Record<string, any> = {}) {
     const items = [
       { id: 'a', label: 'A' },
       { id: 'b', label: 'B' },
     ];
-    const wrapper = mount(SortableList, {
-      props: { modelValue: items, itemKey: 'id' },
+    return mount(SortableList, {
+      props: { modelValue: items, itemKey: 'id', ...overrides },
       slots: {
         item: ({ element }: any) => h(Item, { label: element.label }),
       },
     });
+  }
 
+  it('renders the draft and emits the reordered list', async () => {
+    const wrapper = mountList();
     expect(wrapper.findAll('.item')).toHaveLength(2);
     expect(wrapper.findAll('.sortable-item')).toHaveLength(2);
-    expect(mocks.draggable).toHaveLength(2);
-    expect(mocks.draggable[0].options.data.value).toMatchObject({
-      source: items,
-      index: 0,
-      item: items[0],
-    });
+    expect(mocks.itemOptions).toHaveLength(2);
+    expect(mocks.itemOptions[0].item()).toMatchObject({ id: 'a' });
 
-    mocks.applyTransfer.mockImplementation((store: any) => {
-      const source = store.draggingElements.value.values().next().value
-        .data.source;
-      const [moved] = source.splice(0, 1);
-      source.splice(1, 0, moved);
+    mocks.listOptions.onDrop({
+      from: { index: 0 },
+      to: { index: 1 },
+      sameList: true,
     });
-
-    mocks.droppableOptions.events.onDrop({
-      draggingElements: {
-        value: new Map([
-          ['drag', { data: { source: items, index: 0, item: items[0] } }],
-        ]),
-      },
-    });
-    await nextTick();
-
-    expect(wrapper.emitted('update:modelValue')?.[0]?.[0]).toEqual([
-      { id: 'b', label: 'B' },
-      { id: 'a', label: 'A' },
-    ]);
     expect(wrapper.emitted('end')?.[0]?.[0]).toEqual({
       oldIndex: 0,
       newIndex: 1,
     });
+
+    mocks.listOptions.items.value = [
+      { id: 'b', label: 'B' },
+      { id: 'a', label: 'A' },
+    ];
+    await nextTick();
+    expect(wrapper.emitted('update:modelValue')?.[0]?.[0]).toEqual([
+      { id: 'b', label: 'B' },
+      { id: 'a', label: 'A' },
+    ]);
     wrapper.unmount();
   });
 
-  it('ignores drops without a resolvable or changed position', async () => {
-    const missingKeyItems = [{ label: 'A' }];
-    const missingKey = mount(SortableList, {
-      props: { modelValue: missingKeyItems, itemKey: 'id' },
-      slots: {
-        item: ({ element }: any) => h(Item, { label: element.label }),
-      },
-    });
-    mocks.applyTransfer.mockImplementation(() => undefined);
-    mocks.droppableOptions.events.onDrop({
-      draggingElements: {
-        value: new Map([
-          [
-            'drag',
-            {
-              data: {
-                source: missingKeyItems,
-                index: 0,
-                item: missingKeyItems[0],
-              },
-            },
-          ],
-        ]),
-      },
-    });
-    expect(missingKey.emitted('end')).toBeUndefined();
-    expect(missingKey.emitted('update:modelValue')).toBeUndefined();
-    missingKey.unmount();
-
-    const items = [
-      { id: 'a', label: 'A' },
-      { id: 'b', label: 'B' },
-    ];
-    const wrapper = mount(SortableList, {
-      props: { modelValue: items, itemKey: 'id' },
-      slots: {
-        item: ({ element }: any) => h(Item, { label: element.label }),
-      },
-    });
-    mocks.droppableOptions.events.onDrop({
-      draggingElements: {
-        value: new Map([
-          ['drag', { data: { source: items, index: 0, item: items[0] } }],
-        ]),
-      },
+  it('ignores a drop that does not move the item', () => {
+    const wrapper = mountList();
+    mocks.listOptions.onDrop({
+      from: { index: 1 },
+      to: { index: 1 },
+      sameList: true,
     });
     expect(wrapper.emitted('end')).toBeUndefined();
-    expect(wrapper.emitted('update:modelValue')).toBeUndefined();
+    wrapper.unmount();
+  });
+
+  it('passes group, handle and disabled options through', () => {
+    const wrapper = mountList({
+      groups: ['playlists'],
+      handle: '.drag-handle',
+      disabled: true,
+    });
+    expect(mocks.listOptions.group).toBe('playlists');
+    expect(mocks.listOptions.disabled()).toBe(true);
+    expect(mocks.itemOptions[0].handle()).toBe('.drag-handle');
+    expect(mocks.itemOptions[0].disabled()).toBe(true);
     wrapper.unmount();
   });
 });
 
 describe('SortableItem', () => {
   beforeEach(() => {
-    mocks.draggable = [];
+    mocks.itemOptions = [];
   });
 
-  function mountItem(props: Record<string, any> = {}) {
-    return mount(SortableItem, {
+  it('renders its slot and exposes the item key', () => {
+    const wrapper = mount(SortableItem, {
       props: {
         item: { id: 'a' },
-        index: 0,
-        source: [{ id: 'a' }],
         itemKey: 'id',
-        groups: ['sortable-list'],
-        ...props,
-      },
-      slots: { default: '<button class="inside">Inside</button>' },
-    });
-  }
-
-  it('starts dragging from the item but not from buttons', async () => {
-    const wrapper = mountItem();
-    const handle = mocks.draggable[0].handleDragStart;
-    await wrapper.trigger('pointerdown');
-    expect(handle).toHaveBeenCalledTimes(1);
-    mocks.draggable[0].options.events.onStart();
-    mocks.draggable[0].options.events.onMove();
-    await wrapper.trigger('click');
-    mocks.draggable[0].options.events.onEnd();
-    await wrapper.find('.inside').trigger('pointerdown');
-    expect(handle).toHaveBeenCalledTimes(1);
-    window.dispatchEvent(new PointerEvent('pointerup'));
-    vi.useFakeTimers();
-    vi.advanceTimersByTime(1);
-    vi.useRealTimers();
-    wrapper.unmount();
-  });
-
-  it('respects handle, disabled and lifecycle state', async () => {
-    const wrapper = mountItem({ handle: '.drag-handle' });
-    const entry = mocks.draggable[0];
-    await wrapper.find('.inside').trigger('pointerdown');
-    expect(entry.handleDragStart).not.toHaveBeenCalled();
-    wrapper.unmount();
-
-    const handleWrapper = mount(SortableItem, {
-      props: {
-        item: { id: 'a' },
         index: 0,
-        source: [{ id: 'a' }],
-        itemKey: 'id',
-        groups: ['sortable-list'],
-        handle: '.drag-handle',
+        handle: '.handle',
       },
-      slots: {
-        default: '<span class="drag-handle">Handle</span>',
-      },
+      slots: { default: '<span class="content">Content</span>' },
     });
-    await handleWrapper.find('.drag-handle').trigger('pointerdown');
-    expect(mocks.draggable[1].handleDragStart).toHaveBeenCalled();
-    handleWrapper.unmount();
-
-    const disabled = mountItem({ disabled: true });
-    await disabled.trigger('pointerdown');
-    expect(mocks.draggable[2].handleDragStart).not.toHaveBeenCalled();
-    disabled.unmount();
+    expect(wrapper.find('.content').exists()).toBe(true);
+    expect(mocks.itemOptions[0].id()).toBe('a');
+    expect(mocks.itemOptions[0].handle()).toBe('.handle');
+    expect(wrapper.classes()).not.toContain('sortable-item--dragging');
+    expect(wrapper.classes()).not.toContain('sortable-item--placeholder');
+    wrapper.unmount();
   });
 });

@@ -1,74 +1,33 @@
 <script setup lang="ts" generic="T extends Record<string, any>">
-import { computed, ref } from 'vue';
-import { useDraggable } from '@vue-dnd-kit/core';
+import { useTemplateRef } from 'vue';
+import { makeSortableItem } from '@vue-dnd-kit/core';
 
 const props = defineProps<{
   item: T;
-  index: number;
-  source: T[];
   itemKey: string;
-  groups: string[];
+  index: number;
   handle?: string;
   disabled?: boolean;
 }>();
 
-const didDrag = ref(false);
+const itemRef = useTemplateRef<HTMLElement>('item');
 
-const { elementRef, handleDragStart, isDragging } = useDraggable({
-  groups: props.groups,
-  disabled: props.disabled,
-  data: computed(() => ({
-    source: props.source,
-    index: props.index,
-    item: props.item,
-  })),
-  events: {
-    onStart: () => {
-      didDrag.value = false;
-    },
-    onMove: () => {
-      didDrag.value = true;
-    },
-    onEnd: () => {
-      didDrag.value = false;
-    },
-  },
+const { isDragging, isPlaceholder } = makeSortableItem(itemRef, {
+  id: () => props.item[props.itemKey],
+  item: () => props.item,
+  handle: () => props.handle,
+  disabled: () => props.disabled,
 });
-
-function onPointerDown(event: PointerEvent) {
-  if (props.disabled) return;
-  const target = event.target as HTMLElement | null;
-  if (target?.closest('button, a, input, textarea, select, [data-no-drag]')) {
-    return;
-  }
-  if (props.handle && !target?.closest(props.handle)) return;
-
-  window.addEventListener(
-    'pointerup',
-    () => {
-      window.setTimeout(() => {
-        didDrag.value = false;
-      }, 0);
-    },
-    { once: true },
-  );
-  handleDragStart(event);
-}
-
-function onClickCapture(event: MouseEvent) {
-  if (!didDrag.value) return;
-  event.preventDefault();
-  event.stopPropagation();
-}
 </script>
 
 <template>
   <div
-    ref="elementRef"
+    ref="item"
     class="sortable-item"
-    :class="{ 'sortable-item--dragging': isDragging }"
-    @pointerdown.capture="onPointerDown"
-    @click.capture="onClickCapture"
+    :class="{
+      'sortable-item--dragging': isDragging,
+      'sortable-item--placeholder': isPlaceholder,
+    }"
   >
     <slot />
   </div>
@@ -81,5 +40,9 @@ function onClickCapture(event: MouseEvent) {
 
 .sortable-item--dragging {
   opacity: 0.6;
+}
+
+.sortable-item--placeholder {
+  opacity: 0.35;
 }
 </style>

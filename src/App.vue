@@ -7,6 +7,7 @@ import {
   ref,
 } from 'vue';
 import { RouterView, useRouter, useRoute } from 'vue-router';
+import { DnDProvider } from '@vue-dnd-kit/core';
 import { useI18n } from 'vue-i18n';
 
 import PWAInstallPrompt from '@/components/PWAInstallPrompt.vue';
@@ -253,7 +254,9 @@ const isSettingsOpen = ref(false);
       </QDrawer>
 
       <QPageContainer>
-        <router-view />
+        <DnDProvider>
+          <router-view />
+        </DnDProvider>
       </QPageContainer>
 
       <QFooter

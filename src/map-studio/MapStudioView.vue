@@ -3,11 +3,12 @@ import { computed, onMounted, ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import { Notify } from 'quasar';
-import { DUNGEON_PRESETS } from '@/map-studio/domain/presets';
 import CanvasHost from '@/map-studio/components/CanvasHost.vue';
-import SortableLayerRow from '@/map-studio/components/SortableLayerRow.vue';
+import StudioHeader from '@/map-studio/components/StudioHeader.vue';
+import StudioPresetsPanel from '@/map-studio/components/StudioPresetsPanel.vue';
+import StudioLayersPanel from '@/map-studio/components/StudioLayersPanel.vue';
 import { useMapStudioStore } from '@/map-studio/stores/mapStudioStore';
-import { confirm, prompt } from '@/dialogs';
+import { prompt } from '@/dialogs';
 import { useMapStudioAutosave } from '@/map-studio/composables/useMapStudioAutosave';
 import { useStudioHotkeys } from '@/map-studio/composables/useStudioHotkeys';
 import {
@@ -15,7 +16,6 @@ import {
   listStudioLocationOptions,
 } from '@/map-studio/integration/location';
 import type { PixiStudioRenderer } from '@/map-studio/renderer/PixiStudioRenderer';
-import type { LayerDropPayload } from '@/map-studio/domain/layers';
 
 const { t } = useI18n();
 const route = useRoute();
@@ -52,23 +52,7 @@ useStudioHotkeys({
 });
 
 const map = computed(() => store.map);
-const layers = computed(() => map.value?.layers ?? []);
-const orderedLayers = computed(() => {
-  const all = layers.value;
-  const build = (parentId: string | null): typeof all => {
-    const children = all
-      .filter((layer) => layer.parentId === parentId)
-      .sort((a, b) => a.order - b.order);
-    return children.flatMap((layer) => [
-      layer,
-      ...(layer.type === 'folder' ? build(layer.id) : []),
-    ]);
-  };
-  return build(null);
-});
-const activeLayer = computed(() => store.activeLayer);
 const selectedObject = computed(() => store.selectedObject);
-const presets = DUNGEON_PRESETS;
 const toolbar = computed(() => [
   { id: 'pan' as const, icon: 'tabler-hand-stop', label: t('mapStudio.pan') },
   {
@@ -153,105 +137,6 @@ function addRectangle(rect: {
   store.addRectangle(rect);
 }
 
-async function renameLayer(): Promise<void> {
-  if (!activeLayer.value) return;
-  const name = await prompt(t('mapStudio.layerName'), {
-    modelValue: activeLayer.value.name,
-  });
-  if (name) store.renameLayer(activeLayer.value.id, name);
-}
-
-async function deleteLayer(): Promise<void> {
-  if (!activeLayer.value) return;
-  if (
-    !(await confirm(
-      t('common.confirmDelete', { title: activeLayer.value.name }),
-    ))
-  )
-    return;
-  store.removeLayer(activeLayer.value.id);
-}
-
-function setFloorColor(event: Event): void {
-  if (!activeLayer.value) return;
-  const color = (event.target as HTMLInputElement).value;
-  store.setLayerStyle(activeLayer.value.id, {
-    ...activeLayer.value.style,
-    floor: { ...activeLayer.value.style.floor, color },
-  });
-}
-
-function setWallColor(event: Event): void {
-  if (!activeLayer.value) return;
-  const color = (event.target as HTMLInputElement).value;
-  store.setLayerStyle(activeLayer.value.id, {
-    ...activeLayer.value.style,
-    walls: { ...activeLayer.value.style.walls, color },
-  });
-}
-
-function setWallWidth(event: Event): void {
-  if (!activeLayer.value) return;
-  const width = Math.max(
-    0.01,
-    Number((event.target as HTMLInputElement).value),
-  );
-  store.setLayerStyle(activeLayer.value.id, {
-    ...activeLayer.value.style,
-    walls: { ...activeLayer.value.style.walls, width },
-  });
-}
-
-function toggleLayerGrid(): void {
-  if (!activeLayer.value) return;
-  store.setLayerStyle(activeLayer.value.id, {
-    ...activeLayer.value.style,
-    grid: {
-      ...activeLayer.value.style.grid,
-      visible: !activeLayer.value.style.grid.visible,
-    },
-  });
-}
-
-function layerDepth(layer: (typeof layers.value)[number]): number {
-  let depth = 0;
-  let parentId = layer.parentId;
-  const seen = new Set<string>();
-  while (parentId && depth < 10 && !seen.has(parentId)) {
-    seen.add(parentId);
-    const parent = layers.value.find((entry) => entry.id === parentId);
-    if (!parent) break;
-    depth += 1;
-    parentId = parent.parentId;
-  }
-  return depth;
-}
-
-function isLayerHidden(layer: (typeof layers.value)[number]): boolean {
-  let parentId = layer.parentId;
-  const seen = new Set<string>();
-  while (parentId && !seen.has(parentId)) {
-    seen.add(parentId);
-    const parent = layers.value.find((entry) => entry.id === parentId);
-    if (!parent) return false;
-    if (parent.type === 'folder' && !parent.expanded) return true;
-    parentId = parent.parentId;
-  }
-  return false;
-}
-
-function onLayerSortDrop(payload: LayerDropPayload): void {
-  store.moveLayerRelative(payload.layerId, payload.targetId, payload.placement);
-}
-
-function toggleFolder(id: string): void {
-  store.toggleFolder(id);
-}
-
-function updateSelected(patch: Record<string, unknown>): void {
-  if (selectedObject.value) store.updateObject(selectedObject.value.id, patch);
-}
-
 function resizeSelected(size: {
   x: number;
   y: number;
@@ -267,14 +152,6 @@ function resizeSelected(size: {
 
 function rotateSelected(rotation: number): void {
   if (selectedObject.value) store.rotateSelectedObject(rotation);
-}
-
-function updateSelectedTransform(key: string, value: number): void {
-  const object = selectedObject.value;
-  if (!object || object.type === 'door' || object.type === 'stairs') return;
-  store.updateObject(object.id, {
-    transform: { ...object.transform, [key]: value },
-  });
 }
 
 async function editText(id: string): Promise<void> {
@@ -406,95 +283,21 @@ async function applyToLocation(): Promise<void> {
 
 <template>
   <div class="map-studio-view">
-    <header class="studio-header">
-      <div class="row items-center q-gutter-sm">
-        <QBtn
-          flat
-          dense
-          round
-          icon="tabler-arrow-left"
-          :aria-label="t('mapStudio.backToLibrary')"
-          @click="router.push('/map-studio')"
-        />
-        <span class="text-subtitle1 text-weight-medium">
-          {{ map?.name ?? t('mapStudio.title') }}
-        </span>
-        <QBadge
-          v-if="store.autosave === 'saving'"
-          color="grey-7"
-          :label="t('mapStudio.saving')"
-        />
-        <QBadge
-          v-else-if="store.dirty"
-          color="orange-7"
-          :label="t('mapStudio.unsaved')"
-        />
-        <QBadge
-          v-else-if="store.autosave === 'saved'"
-          color="green-7"
-          :label="t('mapStudio.saved')"
-        />
-      </div>
-      <div class="row items-center q-gutter-xs">
-        <QBtn
-          flat
-          dense
-          round
-          icon="tabler-undo"
-          :disable="!store.canUndo"
-          :aria-label="t('mapStudio.undo')"
-          @click="store.undo()"
-        />
-        <QBtn
-          flat
-          dense
-          round
-          icon="tabler-redo"
-          :disable="!store.canRedo"
-          :aria-label="t('mapStudio.redo')"
-          @click="store.redo()"
-        />
-        <QBtn
-          flat
-          no-caps
-          icon="tabler-device-floppy"
-          :label="t('mapStudio.save')"
-          @click="store.save()"
-        />
-        <QBtn
-          v-if="hasMaps"
-          flat
-          no-caps
-          icon="tabler-map-pin"
-          :label="t('mapStudio.applyToLocation')"
-          @click="openApplyDialog"
-        />
-        <QBtn
-          color="primary"
-          no-caps
-          icon="tabler-download"
-          :label="t('mapStudio.export')"
-          @click="exportMap('png')"
-        >
-          <QMenu>
-            <QList>
-              <QItem clickable @click="exportMap('png')"
-                ><QItemSection>PNG</QItemSection></QItem
-              >
-              <QItem clickable @click="exportMap('webp')"
-                ><QItemSection>WebP</QItemSection></QItem
-              >
-              <QItem clickable @click="exportMap('jpg')"
-                ><QItemSection>JPG</QItemSection></QItem
-              >
-              <QItem clickable @click="exportPdf"
-                ><QItemSection>PDF</QItemSection></QItem
-              >
-            </QList>
-          </QMenu>
-        </QBtn>
-      </div>
-    </header>
+    <StudioHeader
+      :name="map?.name ?? ''"
+      :autosave="store.autosave"
+      :dirty="store.dirty"
+      :can-undo="store.canUndo"
+      :can-redo="store.canRedo"
+      :has-maps="hasMaps"
+      @back="router.push('/map-studio')"
+      @undo="store.undo()"
+      @redo="store.redo()"
+      @save="store.save()"
+      @apply="openApplyDialog"
+      @export="exportMap"
+      @export-pdf="exportPdf"
+    />
 
     <div v-if="creating" class="studio-loading">
       <QSpinner color="primary" size="42px" />
@@ -626,410 +429,9 @@ async function applyToLocation(): Promise<void> {
           @ready="onRendererReady"
         />
 
-        <aside class="studio-presets">
-          <div class="studio-layers-title">
-            {{ t('mapStudio.presets.title') }}
-          </div>
-          <div
-            v-for="preset in presets"
-            :key="preset.id"
-            class="studio-preset-row"
-          >
-            <span
-              class="studio-preset-swatch"
-              :style="{
-                background: preset.style.floor.color,
-                borderColor: preset.style.walls.color,
-              }"
-            />
-            <span class="studio-layer-name">{{ t(preset.nameKey) }}</span>
-            <QBtn
-              flat
-              dense
-              round
-              icon="tabler-check"
-              :disable="!activeLayer"
-              :title="t('mapStudio.presets.apply')"
-              @click="
-                activeLayer && store.applyPreset(activeLayer.id, preset.id)
-              "
-            />
-            <QBtn
-              flat
-              dense
-              round
-              icon="tabler-plus"
-              :title="t('mapStudio.addLayer')"
-              @click="store.addDungeonLayer(preset.id)"
-            />
-          </div>
-        </aside>
+        <StudioPresetsPanel />
 
-        <aside class="studio-layers">
-          <div class="studio-layers-title row items-center justify-between">
-            <span>{{ t('mapStudio.layers') }}</span>
-            <span class="row q-gutter-xs">
-              <QBtn
-                flat
-                dense
-                round
-                icon="tabler-plus"
-                :title="t('mapStudio.addLayer')"
-                @click="store.addDungeonLayer('classic-hatching')"
-              />
-              <QBtn
-                flat
-                dense
-                round
-                icon="tabler-arrow-up"
-                :title="t('mapStudio.moveUp')"
-                @click="
-                  store.activeLayerId &&
-                  store.moveLayer(store.activeLayerId, -1)
-                "
-              />
-              <QBtn
-                flat
-                dense
-                round
-                icon="tabler-arrow-down"
-                :title="t('mapStudio.moveDown')"
-                @click="
-                  store.activeLayerId && store.moveLayer(store.activeLayerId, 1)
-                "
-              />
-            </span>
-          </div>
-          <SortableLayerRow
-            v-for="layer in orderedLayers.filter(
-              (entry) => !isLayerHidden(entry),
-            )"
-            :key="layer.id"
-            :layer="layer"
-            class="studio-layer-row"
-            :class="{
-              'studio-layer-row--active':
-                store.activeLayerId === layer.id && layer.type === 'dungeon',
-            }"
-            :style="{ paddingLeft: `${6 + layerDepth(layer) * 12}px` }"
-            @drop="onLayerSortDrop"
-            @click="layer.type === 'dungeon' && store.setActiveLayer(layer.id)"
-          >
-            <QBtn
-              v-if="layer.type === 'folder'"
-              flat
-              dense
-              round
-              :icon="
-                layer.expanded ? 'tabler-chevron-down' : 'tabler-chevron-right'
-              "
-              :aria-label="t('mapStudio.toggleFolder')"
-              @click.stop="toggleFolder(layer.id)"
-            />
-            <QIcon
-              :name="
-                layer.type === 'background'
-                  ? 'tabler-photo'
-                  : layer.type === 'images'
-                    ? 'tabler-photo-plus'
-                    : layer.type === 'folder'
-                      ? 'tabler-folder'
-                      : 'tabler-square'
-              "
-              size="18px"
-            />
-            <span v-if="layer.parentId" class="studio-layer-indent" />
-            <span class="studio-layer-name">{{ layer.name }}</span>
-            <QBtn
-              flat
-              dense
-              round
-              :icon="layer.visible ? 'tabler-eye' : 'tabler-eye-off'"
-              :aria-label="t('mapStudio.toggleVisibility')"
-              @click.stop="store.toggleLayerVisibility(layer.id)"
-            />
-            <QBtn
-              flat
-              dense
-              round
-              :icon="layer.locked ? 'tabler-lock' : 'tabler-lock-open'"
-              :aria-label="t('mapStudio.toggleLock')"
-              @click.stop="store.toggleLayerLock(layer.id)"
-            />
-          </SortableLayerRow>
-
-          <template
-            v-if="
-              activeLayer && layers.some((layer) => layer.type === 'folder')
-            "
-          >
-            <label class="studio-field">
-              <span>{{ t('mapStudio.folder') }}</span>
-              <select
-                :value="activeLayer.parentId ?? ''"
-                @change="
-                  store.setLayerParent(
-                    activeLayer.id,
-                    ($event.target as HTMLSelectElement).value || null,
-                  )
-                "
-              >
-                <option value="">{{ t('mapStudio.noFolder') }}</option>
-                <option
-                  v-for="folder in layers.filter(
-                    (layer) => layer.type === 'folder',
-                  )"
-                  :key="folder.id"
-                  :value="folder.id"
-                >
-                  {{ folder.name }}
-                </option>
-              </select>
-            </label>
-          </template>
-
-          <template v-if="selectedObject">
-            <QSeparator class="q-my-sm" />
-            <div class="row items-center justify-between q-mb-xs">
-              <span class="text-caption text-weight-medium">{{
-                t('mapStudio.objectSettings')
-              }}</span>
-              <span class="row q-gutter-xs">
-                <QBtn
-                  flat
-                  dense
-                  round
-                  icon="tabler-copy"
-                  :title="t('mapStudio.duplicate')"
-                  @click="store.duplicateObject(selectedObject.id)"
-                />
-                <QBtn
-                  flat
-                  dense
-                  round
-                  icon="tabler-arrow-up"
-                  :title="t('mapStudio.bringForward')"
-                  @click="store.reorderObject(selectedObject.id, 1)"
-                />
-                <QBtn
-                  flat
-                  dense
-                  round
-                  icon="tabler-arrow-down"
-                  :title="t('mapStudio.sendBackward')"
-                  @click="store.reorderObject(selectedObject.id, -1)"
-                />
-                <QBtn
-                  flat
-                  dense
-                  round
-                  icon="tabler-trash"
-                  :title="t('common.delete')"
-                  @click="store.removeSelectedObject()"
-                />
-              </span>
-            </div>
-            <label v-if="selectedObject.type === 'text'" class="studio-field">
-              <span>{{ t('mapStudio.text') }}</span>
-              <input
-                class="studio-text-input"
-                :value="selectedObject.text"
-                @change="
-                  updateSelected({
-                    text: ($event.target as HTMLInputElement).value,
-                  })
-                "
-              />
-            </label>
-            <label v-if="selectedObject.type === 'text'" class="studio-field">
-              <span>X / Y</span>
-              <input
-                class="studio-number"
-                type="number"
-                step="0.1"
-                :value="selectedObject.transform.x"
-                @input="
-                  updateSelectedTransform(
-                    'x',
-                    Number(($event.target as HTMLInputElement).value),
-                  )
-                "
-              />
-              <input
-                class="studio-number"
-                type="number"
-                step="0.1"
-                :value="selectedObject.transform.y"
-                @input="
-                  updateSelectedTransform(
-                    'y',
-                    Number(($event.target as HTMLInputElement).value),
-                  )
-                "
-              />
-            </label>
-            <label v-if="selectedObject.type === 'text'" class="studio-field">
-              <span>{{ t('mapStudio.fontSize') }}</span>
-              <input
-                class="studio-number"
-                type="number"
-                min="0.05"
-                step="0.01"
-                :value="selectedObject.fontSize"
-                @input="
-                  updateSelected({
-                    fontSize: Number(($event.target as HTMLInputElement).value),
-                  })
-                "
-              />
-              <input
-                type="color"
-                :value="selectedObject.color"
-                @input="
-                  updateSelected({
-                    color: ($event.target as HTMLInputElement).value,
-                  })
-                "
-              />
-            </label>
-            <label v-if="selectedObject.type === 'door'" class="studio-field">
-              <span>{{ t('mapStudio.variant') }}</span>
-              <select
-                :value="selectedObject.variant"
-                @change="
-                  updateSelected({
-                    variant: Number(($event.target as HTMLSelectElement).value),
-                  })
-                "
-              >
-                <option :value="0">1</option>
-                <option :value="1">2</option>
-              </select>
-            </label>
-            <label v-if="selectedObject.type === 'stairs'" class="studio-field">
-              <span>{{ t('mapStudio.steps') }}</span>
-              <input
-                class="studio-number"
-                type="number"
-                min="1"
-                step="1"
-                :value="selectedObject.stepsPerCell"
-                @input="
-                  updateSelected({
-                    stepsPerCell: Number(
-                      ($event.target as HTMLInputElement).value,
-                    ),
-                  })
-                "
-              />
-            </label>
-            <label class="studio-field">
-              <span>{{ t('mapStudio.opacity') }}</span>
-              <input
-                type="range"
-                min="0"
-                max="1"
-                step="0.05"
-                :value="selectedObject.opacity"
-                @input="
-                  updateSelected({
-                    opacity: Number(($event.target as HTMLInputElement).value),
-                  })
-                "
-              />
-            </label>
-            <label v-if="selectedObject.type === 'text'" class="studio-field">
-              <span>{{ t('mapStudio.rotation') }}</span>
-              <input
-                class="studio-number"
-                type="number"
-                step="0.1"
-                :value="selectedObject.transform.rotation"
-                @input="
-                  updateSelectedTransform(
-                    'rotation',
-                    Number(($event.target as HTMLInputElement).value),
-                  )
-                "
-              />
-            </label>
-          </template>
-
-          <template v-else-if="activeLayer">
-            <QSeparator class="q-my-sm" />
-            <div class="row items-center justify-between q-mb-xs">
-              <span class="text-caption text-weight-medium">{{
-                t('mapStudio.layerSettings')
-              }}</span>
-              <span class="row q-gutter-xs">
-                <QBtn
-                  flat
-                  dense
-                  round
-                  icon="tabler-pencil"
-                  :title="t('mapStudio.rename')"
-                  @click="renameLayer"
-                />
-                <QBtn
-                  flat
-                  dense
-                  round
-                  icon="tabler-trash"
-                  :title="t('mapStudio.deleteLayer')"
-                  @click="deleteLayer"
-                />
-              </span>
-            </div>
-            <label class="studio-field">
-              <span>{{ t('mapStudio.opacity') }}</span>
-              <input
-                type="range"
-                min="0"
-                max="1"
-                step="0.05"
-                :value="activeLayer.opacity"
-                @input="
-                  store.setLayerOpacity(
-                    activeLayer.id,
-                    Number(($event.target as HTMLInputElement).value),
-                  )
-                "
-              />
-            </label>
-            <label class="studio-field">
-              <span>{{ t('mapStudio.floor') }}</span>
-              <input
-                type="color"
-                :value="activeLayer.style.floor.color"
-                @input="setFloorColor"
-              />
-            </label>
-            <label class="studio-field">
-              <span>{{ t('mapStudio.walls') }}</span>
-              <input
-                type="color"
-                :value="activeLayer.style.walls.color"
-                @input="setWallColor"
-              />
-              <input
-                class="studio-number"
-                type="number"
-                min="0.01"
-                step="0.01"
-                :value="activeLayer.style.walls.width"
-                @input="setWallWidth"
-              />
-            </label>
-            <label class="studio-field studio-field--check">
-              <input
-                type="checkbox"
-                :checked="activeLayer.style.grid.visible"
-                @change="toggleLayerGrid"
-              />
-              <span>{{ t('mapStudio.showLayerGrid') }}</span>
-            </label>
-          </template>
-        </aside>
+        <StudioLayersPanel />
       </div>
     </template>
 
@@ -1086,16 +488,6 @@ async function applyToLocation(): Promise<void> {
   color: var(--color-text);
   background: var(--color-background);
 }
-.studio-header {
-  z-index: 3;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  min-height: 48px;
-  padding: 0 12px;
-  background: var(--color-background);
-  border-bottom: 1px solid var(--color-border-light);
-}
 .studio-body {
   position: relative;
   flex: 1;
@@ -1131,105 +523,7 @@ async function applyToLocation(): Promise<void> {
 .studio-division {
   width: 96px;
 }
-.studio-layers {
-  position: absolute;
-  top: 12px;
-  right: 12px;
-  z-index: 3;
-  width: 240px;
-  max-height: calc(100% - 90px);
-  padding: 8px;
-  overflow: auto;
-  background: var(--color-background);
-  border: 1px solid var(--color-border-light);
-  border-radius: 10px;
-  box-shadow: 0 6px 24px rgb(0 0 0 / 12%);
-}
-.studio-layers-title {
-  padding: 4px 6px 8px;
-  font-weight: 600;
-}
-.studio-layer-row {
-  display: flex;
-  gap: 6px;
-  align-items: center;
-  padding: 4px 6px;
-  border-radius: 6px;
-  cursor: pointer;
-}
-.studio-layer-row--active {
-  background: var(--color-selected-surface);
-}
-.studio-layer-name {
-  flex: 1;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-.studio-presets {
-  position: absolute;
-  top: 12px;
-  left: 12px;
-  z-index: 3;
-  width: 214px;
-  padding: 8px;
-  background: var(--color-background);
-  border: 1px solid var(--color-border-light);
-  border-radius: 10px;
-  box-shadow: 0 6px 24px rgb(0 0 0 / 12%);
-}
-.studio-preset-row {
-  display: flex;
-  gap: 6px;
-  align-items: center;
-  padding: 2px 4px;
-  border-radius: 6px;
-}
-.studio-preset-swatch {
-  width: 20px;
-  height: 20px;
-  border: 2px solid;
-  border-radius: 4px;
-}
-.studio-field {
-  display: flex;
-  gap: 6px;
-  align-items: center;
-  justify-content: space-between;
-  padding: 4px 6px;
-  font-size: 12px;
-}
-.studio-field input[type='color'] {
-  width: 28px;
-  height: 24px;
-  padding: 0;
-  border: 0;
-}
-.studio-field input[type='range'] {
-  width: 96px;
-}
-.studio-field--check {
-  justify-content: flex-start;
-}
-.studio-number {
-  width: 52px;
-}
-.studio-text-input {
-  width: 120px;
-}
 .hidden-input {
   display: none;
-}
-.studio-layer-indent {
-  width: 10px;
-}
-.studio-root-drop {
-  margin-top: 4px;
-  padding: 4px;
-  font-size: 11px;
-  color: var(--color-text-lighter);
-  text-align: center;
-  border: 1px dashed var(--color-border-light);
-  border-radius: 6px;
 }
 </style>
