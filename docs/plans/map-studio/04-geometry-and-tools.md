@@ -139,8 +139,8 @@ Interaction:
 1. Pointer down sets the anchor; drag shows preview; pointer up commits.
 2. Shift constrains to a square; Alt centers from anchor (optional).
 3. Snap applies to both corners and width/height.
-4. If `cornerRadius > 0`, corners are rounded.
-5. Rough mode: after pointer up, show a preview with a floating “roughness strength” follow line; moving the pointer changes amplitude; a second click/Enter commits, Escape cancels. On touch, use a slider in the tool settings instead of a second step.
+4. If `cornerRadius > 0`, corners are rounded; the drag preview uses the same rounded outline.
+5. Rough mode: after pointer up, moving the pointer away from the release point raises the rough level (1–3); the preview updates, and a second click commits. Escape cancels. The rounded rectangle trick works: an 8×8 square with corner radius 4 becomes a circle.
 6. Erase mode sets `operation: 'subtract'`.
 
 Adjacent rooms: separate adds union; touching edges merge, shared wall disappears. Overlap also merges. Walls drawn after can be erased by drawing over in erase mode.
@@ -152,7 +152,7 @@ Adjacent rooms: separate adds union; touching edges merge, shared wall disappear
 3. `sides` controls vertices: `1` renders a circle sampled from 64 segments, `3+` renders a regular polygon, and `2` is treated as a circle.
 4. `drawTo: 'point'` places a vertex at the top; `'edge'` places a flat edge at the top. This gives vertical or horizontal hex-room orientation.
 5. `sides` can be changed from the toolbar slider/input, `[`/`]`, or a digit key while the circle tool is active.
-6. Shift+R toggles the shared rough level; rough outlines use the same geometry pipeline as other shapes.
+6. Shift+R toggles rough mode; after drawing, pointer distance sets the rough level and a second click commits.
 7. Snap applies to the center and radius endpoints.
 8. Erase mode subtracts.
 9. The preview uses the real polygon/circle ring and the committed shape stores `sides` and `drawTo` for later editing.
@@ -174,7 +174,7 @@ Adjacent rooms: separate adds union; touching edges merge, shared wall disappear
 - Snap off allows freehand drag; pointer positions are sampled and committed as one polygon fill.
 - Smooth mode uses a closed Catmull-Rom curve through the placed points.
 - Erase mode subtracts.
-- Rough mode uses the shared rough level.
+- Rough mode: after drawing, pointer distance sets the rough level and a second click commits.
 
 ## 11. Wall tool
 

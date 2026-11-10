@@ -11,6 +11,9 @@ interface StudioHotkeyActions {
   adjustSides?: (delta: -1 | 1) => void;
   setSides?: (sides: number) => void;
   cycleRough?: () => void;
+  toggleMode?: () => void;
+  toggleSnap?: () => void;
+  setDivision?: (division: number) => void;
 }
 
 function isEditable(target: EventTarget | null): boolean {
@@ -22,6 +25,9 @@ function isEditable(target: EventTarget | null): boolean {
 
 /** Keyboard shortcuts that are safe while the map studio is active. */
 export function useStudioHotkeys(actions: StudioHotkeyActions): void {
+  let divisionPending = false;
+  let toolPrefixPending = false;
+
   function onKeyDown(event: KeyboardEvent): void {
     if (isEditable(event.target)) return;
     const modifier = event.ctrlKey || event.metaKey;
@@ -49,6 +55,54 @@ export function useStudioHotkeys(actions: StudioHotkeyActions): void {
       return;
     }
     if (modifier || event.altKey) return;
+    if (toolPrefixPending) {
+      toolPrefixPending = false;
+      const prefixed: Record<string, StudioTool> = {
+        '2': 'object',
+        '3': 'rectangle',
+        '4': 'circle',
+        '5': 'path',
+        '6': 'polygon',
+        '7': 'wall',
+        '9': 'door',
+        '0': 'stairs',
+        '-': 'text',
+      };
+      const selected = prefixed[event.key];
+      if (selected) {
+        event.preventDefault();
+        actions.setTool(selected);
+        return;
+      }
+    }
+    if (event.key.toLowerCase() === 'b') {
+      event.preventDefault();
+      toolPrefixPending = true;
+      return;
+    }
+    if (divisionPending) {
+      divisionPending = false;
+      if (/^[1-9]$/.test(event.key)) {
+        event.preventDefault();
+        actions.setDivision?.(Number(event.key));
+        return;
+      }
+    }
+    if (event.shiftKey && event.key.toLowerCase() === 's') {
+      event.preventDefault();
+      divisionPending = true;
+      return;
+    }
+    if (event.key.toLowerCase() === 'e') {
+      event.preventDefault();
+      actions.toggleMode?.();
+      return;
+    }
+    if (event.key.toLowerCase() === 's') {
+      event.preventDefault();
+      actions.toggleSnap?.();
+      return;
+    }
     if (event.shiftKey && event.key.toLowerCase() === 'r') {
       if (actions.cycleRough) {
         event.preventDefault();

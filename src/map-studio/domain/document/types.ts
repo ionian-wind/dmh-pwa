@@ -260,6 +260,7 @@ export interface ToolSettings {
   mode: 'draw' | 'erase';
   cornerRadius: number;
   rough: Roughness;
+  roughMode: boolean;
   pathRadius: number;
   wallWidth: number;
   sides: number;

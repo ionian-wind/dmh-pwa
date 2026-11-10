@@ -31,7 +31,14 @@ export interface StudioViewport {
 }
 
 export type StudioPreview =
-  | { kind: 'rectangle'; x: number; y: number; width: number; height: number }
+  | {
+      kind: 'rectangle';
+      x: number;
+      y: number;
+      width: number;
+      height: number;
+      cornerRadius?: number;
+    }
   | { kind: 'circle'; cx: number; cy: number; radius: number }
   | { kind: 'polygon'; points: Point[] }
   | { kind: 'line'; points: Point[] };
@@ -259,15 +266,29 @@ export class PixiStudioRenderer {
     }
     const ppc = BASE_PIXELS_PER_CELL;
     if (preview.kind === 'rectangle') {
-      this.previewLayer
-        .rect(
-          preview.x * ppc,
-          preview.y * ppc,
-          preview.width * ppc,
-          preview.height * ppc,
-        )
-        .fill({ color: '#4a90d9', alpha: 0.2 })
-        .stroke({ color: '#2d6fb3', width: 2 });
+      const shape = this.previewLayer;
+      const x = preview.x * ppc;
+      const y = preview.y * ppc;
+      const width = preview.width * ppc;
+      const height = preview.height * ppc;
+      const radius = Math.max(0, preview.cornerRadius ?? 0) * ppc;
+      if (radius > 0) {
+        shape
+          .roundRect(
+            x,
+            y,
+            width,
+            height,
+            Math.min(radius, Math.min(width, height) / 2),
+          )
+          .fill({ color: '#4a90d9', alpha: 0.2 })
+          .stroke({ color: '#2d6fb3', width: 2 });
+      } else {
+        shape
+          .rect(x, y, width, height)
+          .fill({ color: '#4a90d9', alpha: 0.2 })
+          .stroke({ color: '#2d6fb3', width: 2 });
+      }
     } else if (preview.kind === 'circle') {
       this.previewLayer
         .circle(preview.cx * ppc, preview.cy * ppc, preview.radius * ppc)

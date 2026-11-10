@@ -46,7 +46,7 @@ Status: **in progress — editor surface, object interactions, shape selection, 
 ## M1 — Core drawing
 
 - [x] Geometry pipeline: union/difference, shared walls, boundary extraction
-- [x] Rectangle tool: erase, rough, corner radius
+- [x] Rectangle tool: erase, rough post-draw strength, rounded preview, corner radius, shared-wall merging
 - [x] Circle / regular polygon tool: sides slider/input, 1 = circle, point/edge orientation, live radius label, `[`/`]` and digit shortcuts
 - [x] Path tool (click points, radius; freehand/smooth still pending)
 - [x] Polygon tool: click points, double-click/Enter close, click-first-point close, freehand drag when snap is off, smooth curved walls
@@ -123,3 +123,4 @@ Status: **in progress — editor surface, object interactions, shape selection, 
 | 2026-11-10 | Multi-select batch panel     | Show shared properties for a multi-selection, mark mixed values, and provide batch duplicate/order/flip/delete actions (2064 tests / 248 files; coverage branches 87.02%)                                                                                     |
 | 2026-11-10 | Circle tool parity           | Add sides (1 = circle, 3+ = regular polygon), point/edge orientation, snapped center/radius, live radius label, real polygon preview, and sides/rough shortcuts                                                                                               |
 | 2026-11-10 | Polygon tool parity          | Add snap-off freehand polygons, close by clicking the first point, Enter/Z editing, and smooth curved polygon rings                                                                                                                                           |
+| 2026-11-10 | Rectangle tool parity        | Add rounded drag preview, B+3/B+4/B+5/B+6/B+7/B+9/B+0/B+- shortcuts, E/S/Shift+S shortcuts, and post-draw rough strength for rectangle/circle/polygon (2069 tests / 248 files; coverage branches 87.02%)                                                      |

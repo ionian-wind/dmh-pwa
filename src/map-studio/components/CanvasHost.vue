@@ -19,6 +19,7 @@ import type {
   DungeonShape,
   StudioTool,
   ToolSettings,
+  Roughness,
 } from '@/map-studio/domain/document/types';
 
 const { t } = useI18n();
@@ -76,6 +77,7 @@ let drag:
   | { kind: 'rectangle'; start: Point }
   | { kind: 'circle'; center: Point }
   | { kind: 'polygon-freehand'; points: Point[]; lastScreen: Point }
+  | { kind: 'rough'; shape: DungeonShape; startScreen: Point }
   | { kind: 'object'; id: string; start: Point; last: Point }
   | { kind: 'marquee'; start: Point }
   | {
@@ -128,8 +130,56 @@ function localPoint(
   return [event.clientX - (rect?.left ?? 0), event.clientY - (rect?.top ?? 0)];
 }
 
+function roughLevel(distance: number): Roughness {
+  return distance < 24 ? 1 : distance < 80 ? 2 : 3;
+}
+
+function roughPreview(shape: DungeonShape, level: Roughness): void {
+  const preview = shapeToPolygon({
+    ...shape,
+    shape: { ...shape.shape, rough: level },
+  } as DungeonShape);
+  if (preview?.[0]) {
+    renderer.value?.setPreview({
+      kind: 'polygon',
+      points: preview[0].map(([x, y]) => [x, y] as Point),
+    });
+  }
+}
+
+function beginRough(shape: DungeonShape, sx: number, sy: number): boolean {
+  if (!props.settings.roughMode) return false;
+  props.settings.rough = 1;
+  drag = { kind: 'rough', shape, startScreen: [sx, sy] };
+  roughPreview(shape, 1);
+  return true;
+}
+
+function roughShapeId(): string {
+  return `rough-preview-${Date.now()}`;
+}
+
+function commitShape(shape: DungeonShape): void {
+  const data = shape.shape;
+  if (data.kind === 'rectangle') {
+    emit('rectangle', {
+      x: data.x,
+      y: data.y,
+      width: data.width,
+      height: data.height,
+    });
+  } else if (data.kind === 'circle') {
+    emit('circle', { cx: data.cx, cy: data.cy, radius: data.radius });
+  } else if (data.kind === 'polygon') {
+    emit(
+      'polygon',
+      data.points.map(([x, y]) => [x, y] as [number, number]),
+    );
+  }
+}
+
 function onPointerDown(event: PointerEvent): void {
-  if (!renderer.value || !host.value) return;
+  if (!renderer.value || !host.value || drag?.kind === 'rough') return;
   const [sx, sy] = localPoint(event);
   const shouldPan = props.tool === 'pan' || event.button === 1;
   host.value.setPointerCapture?.(event.pointerId);
@@ -339,6 +389,14 @@ function onPointerMove(event: PointerEvent): void {
     });
     return;
   }
+  if (drag.kind === 'rough') {
+    const level = roughLevel(
+      Math.hypot(sx - drag.startScreen[0], sy - drag.startScreen[1]),
+    );
+    props.settings.rough = level;
+    roughPreview(drag.shape, level);
+    return;
+  }
   if (drag.kind === 'polygon-freehand') {
     if (Math.hypot(sx - drag.lastScreen[0], sy - drag.lastScreen[1]) < 4) {
       return;
@@ -470,6 +528,7 @@ function onPointerMove(event: PointerEvent): void {
     y: y1,
     width: x2 - x1,
     height: y2 - y1,
+    cornerRadius: props.settings.cornerRadius,
   });
 }
 
@@ -492,15 +551,35 @@ function onPointerMovePolygon(event: PointerEvent): void {
 function onPointerUp(event: PointerEvent): void {
   if (!renderer.value || !drag) return;
   const [sx, sy] = localPoint(event);
+  if (drag.kind === 'rough') {
+    const level = roughLevel(
+      Math.hypot(sx - drag.startScreen[0], sy - drag.startScreen[1]),
+    );
+    props.settings.rough = level;
+    commitShape(drag.shape);
+    renderer.value.setPreview(null);
+    drag = null;
+    return;
+  }
   if (drag.kind === 'polygon-freehand') {
     const current = renderer.value.screenToWorld(sx, sy);
     drag.points.push([current[0], current[1]]);
-    renderer.value.setPreview(null);
     if (drag.points.length >= 3) {
-      emit(
-        'polygon',
-        drag.points.map(([x, y]) => [x, y] as [number, number]),
-      );
+      const shape: DungeonShape = {
+        id: roughShapeId(),
+        operation: 'add',
+        shape: {
+          kind: 'polygon',
+          points: drag.points.map(([x, y]) => [x, y] as [number, number]),
+          rough: 0,
+          smooth: props.settings.smooth,
+        },
+      };
+      if (beginRough(shape, sx, sy)) return;
+      renderer.value.setPreview(null);
+      commitShape(shape);
+    } else {
+      renderer.value.setPreview(null);
     }
     drag = null;
     return;
@@ -546,11 +625,22 @@ function onPointerUp(event: PointerEvent): void {
     renderer.value.setPreview(null);
     radiusLabel.value = null;
     if (radius >= 1 / 8) {
-      emit('circle', {
-        cx: drag.center[0],
-        cy: drag.center[1],
-        radius,
-      });
+      const shape: DungeonShape = {
+        id: roughShapeId(),
+        operation: 'add',
+        shape: {
+          kind: 'circle',
+          cx: drag.center[0],
+          cy: drag.center[1],
+          radius,
+          sides: Math.max(1, Math.round(props.settings.sides ?? 1)),
+          drawTo: props.settings.drawTo ?? 'point',
+          rough: 0,
+          smooth: false,
+        },
+      };
+      if (beginRough(shape, sx, sy)) return;
+      commitShape(shape);
     }
     drag = null;
     return;
@@ -563,12 +653,22 @@ function onPointerUp(event: PointerEvent): void {
     const y2 = snap(Math.max(drag.start[1], current[1]));
     renderer.value.setPreview(null);
     if (x2 - x1 >= 1 / 8 && y2 - y1 >= 1 / 8) {
-      emit('rectangle', {
-        x: x1,
-        y: y1,
-        width: x2 - x1,
-        height: y2 - y1,
-      });
+      const shape: DungeonShape = {
+        id: roughShapeId(),
+        operation: 'add',
+        shape: {
+          kind: 'rectangle',
+          x: x1,
+          y: y1,
+          width: x2 - x1,
+          height: y2 - y1,
+          cornerRadius: props.settings.cornerRadius,
+          rough: 0,
+          smooth: false,
+        },
+      };
+      if (beginRough(shape, sx, sy)) return;
+      commitShape(shape);
     }
   }
   drag = null;
@@ -583,7 +683,30 @@ function finishPolygon(): void {
   renderer.value.setPreview(null);
   if (props.tool === 'path' && points.length >= 2) emit('path', points);
   else if (props.tool === 'wall' && points.length >= 2) emit('wall', points);
-  else if (points.length >= 3) emit('polygon', points);
+  else if (points.length >= 3) {
+    const shape: DungeonShape = {
+      id: roughShapeId(),
+      operation: 'add',
+      shape: {
+        kind: 'polygon',
+        points: points.map(([x, y]) => [x, y] as [number, number]),
+        rough: 0,
+        smooth: props.settings.smooth,
+      },
+    };
+    const last = points.at(-1) ?? [0, 0];
+    const vp = renderer.value.getViewport();
+    if (
+      beginRough(
+        shape,
+        last[0] * 70 * vp.zoom + vp.x,
+        last[1] * 70 * vp.zoom + vp.y,
+      )
+    ) {
+      return;
+    }
+    commitShape(shape);
+  }
 }
 
 function onDoubleClick(event: MouseEvent): void {

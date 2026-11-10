@@ -11,6 +11,9 @@ const actions = {
   adjustSides: vi.fn(),
   setSides: vi.fn(),
   cycleRough: vi.fn(),
+  toggleMode: vi.fn(),
+  toggleSnap: vi.fn(),
+  setDivision: vi.fn(),
   getTool: () => 'circle' as const,
 };
 
@@ -56,6 +59,16 @@ describe('map studio hotkeys', () => {
     expect(actions.setSides).toHaveBeenCalledWith(6);
     press('R', { shiftKey: true });
     expect(actions.cycleRough).toHaveBeenCalled();
+    press('e');
+    expect(actions.toggleMode).toHaveBeenCalled();
+    press('s');
+    expect(actions.toggleSnap).toHaveBeenCalled();
+    press('S', { shiftKey: true });
+    press('3');
+    expect(actions.setDivision).toHaveBeenCalledWith(3);
+    press('b');
+    press('6');
+    expect(actions.setTool).toHaveBeenCalledWith('polygon');
     wrapper.unmount();
   });
 

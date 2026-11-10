@@ -234,6 +234,8 @@ Each panel is independent and remembers its scroll/expanded sections.
 See `01-feature-parity.md` section 13. Additional editor-wide:
 
 - `Ctrl/Cmd+0`: fit map; `Ctrl/Cmd+1`: 100%; `Ctrl/Cmd+Shift+G`: ungroup? (G toggles group per docs).
+- `R`/`C`/`W`/`D`/`T` select tools directly; `B` then `2–0`/`-` selects Object, Rectangle, Circle, Path, Polygon, Wall, Door, Stairs or Text.
+- `E` toggles draw/erase; `S` toggles snap; `Shift+S` then `1–9` sets the division; `Shift+R` toggles rough mode.
 - `Escape`: cancel current gesture → clear selection → close panel.
 - `Enter`: confirm multi-point shape/paste/text.
 - `Tab`/`Shift+Tab`: cycle panels/controls; arrow keys navigate layer tree.

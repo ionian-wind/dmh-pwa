@@ -53,7 +53,19 @@ useStudioHotkeys({
   adjustSides: (delta) => setCircleSides(store.toolSettings.sides + delta),
   setSides: setCircleSides,
   cycleRough: () => {
-    store.toolSettings.rough = store.toolSettings.rough > 0 ? 0 : 2;
+    store.toolSettings.roughMode = !store.toolSettings.roughMode;
+  },
+  toggleMode: () => {
+    store.toolSettings.mode =
+      store.toolSettings.mode === 'erase' ? 'draw' : 'erase';
+  },
+  toggleSnap: () => {
+    store.toolSettings.snap = !store.toolSettings.snap;
+  },
+  setDivision: (division) => {
+    if ([1, 2, 3, 4, 6, 8, 9].includes(division)) {
+      store.toolSettings.division = division;
+    }
   },
 });
 
@@ -114,10 +126,6 @@ const toolbar = computed(() => [
 ]);
 const divisions = [1, 2, 3, 4, 6, 8, 9].map((value) => ({
   label: `1/${value}`,
-  value,
-}));
-const roughnessOptions = [0, 1, 2, 3].map((value) => ({
-  label: String(value),
   value,
 }));
 const drawToOptions = computed(() => [
@@ -395,15 +403,10 @@ async function applyToLocation(): Promise<void> {
           :label="t('mapStudio.division')"
           class="studio-division"
         />
-        <QSelect
-          v-model="store.toolSettings.rough"
+        <QToggle
+          v-model="store.toolSettings.roughMode"
           dense
-          outlined
-          emit-value
-          map-options
-          :options="roughnessOptions"
           :label="t('mapStudio.rough')"
-          class="studio-division"
         />
         <QToggle
           v-if="store.tool === 'polygon'"

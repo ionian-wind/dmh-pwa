@@ -62,6 +62,7 @@ export const useMapStudioStore = defineStore('mapStudio', () => {
     mode: 'draw',
     cornerRadius: 0,
     rough: 0,
+    roughMode: false,
     pathRadius: 0.25,
     wallWidth: 0.08,
     sides: 1,
