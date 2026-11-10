@@ -268,7 +268,7 @@ function setParent(event: Event): void {
         <span>{{ t('mapStudio.colour') }}</span>
         <input
           type="color"
-          :value="store.map?.background.style.color ?? '#ffffff'"
+          :value="store.map!.background.style.color"
           @input="
             store.setBackgroundColor(($event.target as HTMLInputElement).value)
           "
@@ -278,7 +278,7 @@ function setParent(event: Event): void {
         <span>{{ t('mapStudio.gridColour') }}</span>
         <input
           type="color"
-          :value="store.map?.grid.color ?? '#000000'"
+          :value="store.map!.grid.color"
           @input="store.setGridColor(($event.target as HTMLInputElement).value)"
         />
       </label>
@@ -289,7 +289,7 @@ function setParent(event: Event): void {
           type="number"
           min="0.5"
           step="0.5"
-          :value="store.map?.grid.width ?? 1"
+          :value="store.map!.grid.width"
           @input="
             store.setGridWidth(
               Number(($event.target as HTMLInputElement).value),

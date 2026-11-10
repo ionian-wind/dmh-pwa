@@ -298,3 +298,42 @@ describe('StudioClipboardPanel', () => {
     wrapper.unmount();
   });
 });
+
+describe('StudioObjectSettings transform helpers', () => {
+  it('ignores transforms without an object and invalid object types', () => {
+    const pinia = createPinia();
+    setActivePinia(pinia);
+    const store = useMapStudioStore();
+    const empty = mount(StudioObjectSettings, {
+      global: { plugins: [pinia] },
+    });
+    const emptyVm = empty.vm as any;
+    emptyVm.updateSelected({ opacity: 0.5 });
+    emptyVm.updateTransform('x', 2);
+    empty.unmount();
+
+    store.setMap(createMap(createProject().id));
+    store.addDoor([0, 0], [1, 0]);
+    const door = store.imagesLayer!.objects[0];
+    store.selectObject(door.id);
+    const wrapper = mount(StudioObjectSettings, {
+      global: { plugins: [pinia] },
+    });
+    const vm = wrapper.vm as any;
+    vm.updateTransform('x', 4);
+    expect(store.imagesLayer!.objects[0]).toEqual(door);
+
+    store.addText('Label', [2, 2]);
+    const text = store.imagesLayer!.objects[1];
+    store.selectObject(text.id);
+    const textWrapper = mount(StudioObjectSettings, {
+      global: { plugins: [pinia] },
+    });
+    (textWrapper.vm as any).updateTransform('x', 5);
+    expect(store.imagesLayer!.objects[1].transform.x).toBe(5);
+    (textWrapper.vm as any).updateTransform('rotation', 1);
+    expect(store.imagesLayer!.objects[1].transform.rotation).toBe(1);
+    textWrapper.unmount();
+    wrapper.unmount();
+  });
+});

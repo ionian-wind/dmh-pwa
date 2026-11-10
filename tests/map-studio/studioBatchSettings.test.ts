@@ -191,3 +191,15 @@ describe('StudioObjectBatchSettings', () => {
     wrapper.unmount();
   });
 });
+
+describe('StudioObjectBatchSettings empty state', () => {
+  it('exposes empty common values without objects', () => {
+    const { pinia } = setup();
+    const wrapper = mountBatch(pinia);
+    const vm = wrapper.vm as any;
+    expect(vm.type).toBeNull();
+    expect(vm.opacity).toBeUndefined();
+    expect(vm.rotation).toBeUndefined();
+    wrapper.unmount();
+  });
+});

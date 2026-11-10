@@ -3,6 +3,11 @@ import { defineComponent } from 'vue';
 import { mount } from '@vue/test-utils';
 import { useStudioHotkeys } from '@/map-studio/composables/useStudioHotkeys';
 
+function pressKey(options: KeyboardEventInit): void {
+  document.dispatchEvent(new KeyboardEvent('keydown', options));
+  document.dispatchEvent(new KeyboardEvent('keyup', options));
+}
+
 const actions = {
   save: vi.fn(),
   undo: vi.fn(),
@@ -37,9 +42,8 @@ describe('map studio hotkeys', () => {
 
   it('handles save, undo, redo and tool shortcuts', () => {
     const wrapper = mount(Harness);
-    const press = (key: string, options: KeyboardEventInit = {}) => {
-      window.dispatchEvent(new KeyboardEvent('keydown', { key, ...options }));
-    };
+    const press = (key: string, options: KeyboardEventInit = {}) =>
+      pressKey({ key, ...options });
 
     press('s', { ctrlKey: true });
     expect(actions.save).toHaveBeenCalled();
@@ -110,7 +114,7 @@ describe('map studio hotkey guards', () => {
   it('ignores modified and unknown keys and non-editable targets', () => {
     const wrapper = mount(Harness);
     const press = (key: string, options: KeyboardEventInit = {}) =>
-      window.dispatchEvent(new KeyboardEvent('keydown', { key, ...options }));
+      pressKey({ key, ...options });
     press('r', { altKey: true });
     press('x');
     expect(actions.setTool).not.toHaveBeenCalled();
@@ -123,8 +127,8 @@ describe('map studio hotkey guards', () => {
       },
     });
     const roughWrapper = mount(noRough);
-    window.dispatchEvent(
-      new KeyboardEvent('keydown', { key: 'R', shiftKey: true }),
+    document.dispatchEvent(
+      new KeyboardEvent('keydown', { key: 'R', shiftKey: true, bubbles: true }),
     );
     roughWrapper.unmount();
     wrapper.unmount();
@@ -143,9 +147,9 @@ describe('map studio hotkey deletion', () => {
       },
     });
     const wrapper = mount(HarnessDelete);
-    window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Delete' }));
+    pressKey({ key: 'Delete' });
     expect(deleteSelection).toHaveBeenCalledTimes(1);
-    window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Backspace' }));
+    pressKey({ key: 'Backspace' });
     expect(deleteSelection).toHaveBeenCalledTimes(2);
     wrapper.unmount();
   });
@@ -165,9 +169,9 @@ describe('map studio path radius hotkeys', () => {
       },
     });
     const wrapper = mount(HarnessPath);
-    window.dispatchEvent(new KeyboardEvent('keydown', { key: ']' }));
+    pressKey({ key: ']' });
     expect(adjustRadius).toHaveBeenCalledWith(1);
-    window.dispatchEvent(new KeyboardEvent('keydown', { key: '[' }));
+    pressKey({ key: '[' });
     expect(adjustRadius).toHaveBeenCalledWith(-1);
     wrapper.unmount();
   });
@@ -179,6 +183,7 @@ describe('map studio object hotkeys', () => {
       setup() {
         useStudioHotkeys({
           ...actions,
+          getTool: () => 'object' as const,
           hasObjectSelection: () => true,
         });
         return () => null;
@@ -186,7 +191,7 @@ describe('map studio object hotkeys', () => {
     });
     const wrapper = mount(HarnessObjects);
     const press = (key: string, options: KeyboardEventInit = {}) =>
-      window.dispatchEvent(new KeyboardEvent('keydown', { key, ...options }));
+      pressKey({ key, ...options });
     press('c', { ctrlKey: true });
     expect(actions.copySelection).toHaveBeenCalled();
     press('x', { ctrlKey: true });
@@ -227,13 +232,54 @@ describe('map studio stairs step hotkeys', () => {
       },
     });
     const wrapper = mount(HarnessStairs);
-    window.dispatchEvent(new KeyboardEvent('keydown', { key: ']' }));
+    pressKey({ key: ']' });
     expect(adjustSteps).toHaveBeenCalledWith(1);
-    window.dispatchEvent(new KeyboardEvent('keydown', { key: '[' }));
+    pressKey({ key: '[' });
     expect(adjustSteps).toHaveBeenCalledWith(-1);
-    window.dispatchEvent(new KeyboardEvent('keydown', { key: '6' }));
+    pressKey({ key: '6' });
     expect(setSteps).toHaveBeenCalledWith(6);
-    window.dispatchEvent(new KeyboardEvent('keydown', { key: 'x' }));
+    pressKey({ key: 'x' });
     wrapper.unmount();
+  });
+});
+
+describe('map studio hotkey context branches', () => {
+  it('handles keys without a tool or object selection', () => {
+    const HarnessEmpty = defineComponent({
+      setup() {
+        useStudioHotkeys({
+          ...actions,
+          getTool: () => undefined,
+          hasObjectSelection: () => false,
+        });
+        return () => null;
+      },
+    });
+    const wrapper = mount(HarnessEmpty);
+    const press = (key: string, options: KeyboardEventInit = {}) =>
+      pressKey({ key, ...options });
+    press('g');
+    press('ArrowRight');
+    press(']');
+    press('S', { shiftKey: true });
+    press('0');
+    press('b');
+    press('b');
+    press('0');
+    wrapper.unmount();
+
+    const HarnessStairs = defineComponent({
+      setup() {
+        useStudioHotkeys({
+          ...actions,
+          getTool: () => 'stairs' as const,
+          hasObjectSelection: () => false,
+        });
+        return () => null;
+      },
+    });
+    const stairs = mount(HarnessStairs);
+    press('0');
+    stairs.unmount();
   });
 });

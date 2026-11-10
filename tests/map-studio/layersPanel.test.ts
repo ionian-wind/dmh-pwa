@@ -158,6 +158,12 @@ describe('StudioLayersPanel interactions', () => {
     wrapper.unmount();
   });
 
+  it('ignores bulk delete without a multi-selection', async () => {
+    const { wrapper } = setup();
+    await (wrapper.vm as any).bulkDelete();
+    wrapper.unmount();
+  });
+
   it('renders no rows without a map', () => {
     const pinia = createPinia();
     setActivePinia(pinia);
@@ -167,6 +173,20 @@ describe('StudioLayersPanel interactions', () => {
     });
     expect(store.map).toBeNull();
     expect(wrapper.findAll('.studio-layer-row')).toHaveLength(0);
+    wrapper.unmount();
+  });
+});
+
+describe('StudioLayersPanel protected layers', () => {
+  it('ignores delete requests for protected layers', async () => {
+    const { store, wrapper } = setup();
+    const background = store.map!.layers.find(
+      (layer) => layer.type === 'background',
+    )!;
+    await (wrapper.vm as any).deleteLayer(background);
+    expect(store.map!.layers.some((layer) => layer.id === background.id)).toBe(
+      true,
+    );
     wrapper.unmount();
   });
 });

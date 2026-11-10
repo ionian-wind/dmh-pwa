@@ -59,6 +59,27 @@ describe('map studio canvas view', () => {
     });
   });
 
+  it('returns null for unbounded wall shapes', () => {
+    expect(
+      shapeBounds({
+        id: 'wall',
+        operation: 'add',
+        shape: {
+          kind: 'wall',
+          points: [
+            [0, 0],
+            [1, 1],
+          ],
+          width: 0.1,
+          dash: false,
+          dashSize: 0.4,
+          rough: 0,
+          smooth: false,
+        },
+      }),
+    ).toBeNull();
+  });
+
   it('computes polygon bounds for dungeon shapes', () => {
     expect(shapeBounds(rectangle('shape', 2, 3, 4, 5))).toEqual({
       x: 2,
@@ -91,6 +112,29 @@ describe('map studio canvas view', () => {
     expect(bounds.y).toBe(19.5);
     expect(bounds.x + bounds.width).toBeGreaterThan(43);
     expect(bounds.y + bounds.height).toBeGreaterThan(50);
+  });
+
+  it('ignores shapes that do not produce bounds', () => {
+    const map = createMap(createProject().id);
+    const dungeon = map.layers.find((layer) => layer.type === 'dungeon')!;
+    if (dungeon.type !== 'dungeon') throw new Error('missing dungeon');
+    dungeon.shapes.push({
+      id: 'wall',
+      operation: 'add',
+      shape: {
+        kind: 'wall',
+        points: [
+          [0, 0],
+          [1, 1],
+        ],
+        width: 0.1,
+        dash: false,
+        dashSize: 0.4,
+        rough: 0,
+        smooth: false,
+      },
+    });
+    expect(contentBounds(map)).toEqual({ x: 0, y: 0, width: 1, height: 1 });
   });
 
   it('ignores hidden layers and objects', () => {

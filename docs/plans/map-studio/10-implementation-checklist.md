@@ -54,7 +54,7 @@ Status: **in progress — editor surface, object interactions, shape selection, 
 - [x] Draw/erase mode, snap/division, corner radius and rough levels
 - [x] Undo/redo for every drawing mutation
 - [x] Classic dungeon preset + basic layer settings
-- [x] Keyboard shortcuts for drawing tools
+- [x] Keyboard shortcuts for drawing tools via `hotkeys-js` (scoped bindings, editable-target filtering and cleanup)
 
 ## M2 — Editor surface
 
@@ -136,3 +136,4 @@ Status: **in progress — editor surface, object interactions, shape selection, 
 | 2026-11-10 | Layer parity fixes                 | Correct topmost-first layer order, double-click rename, duplicate/front/back, lock enforcement, selectable background/images/folder settings, blend mode, blocks-light and background grid controls (2103 tests / 251 files; coverage branches 87.01%)        |
 | 2026-11-10 | Layer multi-select and canvas sync | Add Shift/Ctrl layer selection, bulk duplicate/delete/group/lock, resizable Layers panel, and canvas highlight for selected layer objects/geometry (2111 tests / 252 files; coverage branches 87.00%)                                                         |
 | 2026-11-10 | Scope cleanup                      | Move `.ds` import/export, Watabou/donjon imports and isometric/hex-grid work to deferred proposals; remove isometric from current UI/scope (2111 tests / 252 files; coverage branches 87.02%)                                                                 |
+| 2026-11-10 | Hotkey library migration           | Replace manual keyboard listeners with `hotkeys-js` scoped bindings; keep B-prefix/division chords, modifier shortcuts, editable-target guards and unmount cleanup (2120 tests / 252 files; coverage branches 87.03%)                                         |

@@ -181,3 +181,20 @@ describe('LayerTree', () => {
     expect(wrapper.emitted('reorder')).toBeUndefined();
   });
 });
+
+describe('LayerTree root drops', () => {
+  it('emits a null expanded folder when dropping at the root', () => {
+    const layers = [createDungeonLayer({ id: 'root', name: 'Root', order: 0 })];
+    const wrapper = mountTree(layers);
+    mocks.treeOptions.onDrop({
+      result: new Map([
+        ['map-studio-layers', [{ id: 'root', layer: layers[0] }]],
+      ]),
+      to: { parentKey: null, index: 0 },
+      preventDefault: () => undefined,
+    });
+    const payload = wrapper.emitted('reorder')?.[0]?.[0] as any;
+    expect(payload.expandedFolderId).toBeNull();
+    expect(payload.layers.map((layer: any) => layer.id)).toEqual(['root']);
+  });
+});

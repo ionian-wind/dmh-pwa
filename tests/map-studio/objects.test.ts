@@ -83,3 +83,24 @@ describe('map studio selection bounds', () => {
     expect(bounds.y + bounds.height).toBeGreaterThan(4);
   });
 });
+
+describe('objectBounds images', () => {
+  it('returns the image transform bounds', () => {
+    const object = {
+      id: 'image',
+      type: 'image' as const,
+      src: 'data:image/png;base64,AA==',
+      opacity: 1,
+      transform: {
+        x: 2,
+        y: 3,
+        width: 4,
+        height: 5,
+        rotation: 0,
+        flipX: false,
+        flipY: false,
+      },
+    };
+    expect(objectBounds(object)).toEqual({ x: 2, y: 3, width: 4, height: 5 });
+  });
+});

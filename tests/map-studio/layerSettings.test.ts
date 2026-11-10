@@ -3,6 +3,7 @@ import { mount } from '@vue/test-utils';
 import { createPinia, setActivePinia } from 'pinia';
 import StudioLayerSettings from '@/map-studio/components/StudioLayerSettings.vue';
 import { useMapStudioStore } from '@/map-studio/stores/mapStudioStore';
+import { confirm } from '@/dialogs';
 import {
   createMap,
   createProject,
@@ -170,6 +171,13 @@ describe('StudioLayerSettings', () => {
     const folderPanel = mountSettings(pinia);
     expect(folderPanel.text()).toContain('Folder');
     expect(folderPanel.text()).toContain('Layer settings');
+    vi.mocked(confirm).mockResolvedValueOnce(false);
+    await folderPanel.find('[title="Delete layer"]').trigger('click');
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    expect(store.map!.layers.some((layer) => layer.id === folder.id)).toBe(
+      true,
+    );
+    vi.mocked(confirm).mockResolvedValueOnce(true);
     await folderPanel.find('[title="Delete layer"]').trigger('click');
     await new Promise((resolve) => setTimeout(resolve, 0));
     expect(store.map!.layers.some((layer) => layer.id === folder.id)).toBe(
