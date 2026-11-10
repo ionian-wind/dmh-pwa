@@ -14,7 +14,8 @@ export function buildLayerTree(layers: StudioLayer[]): LayerTreeNode[] {
     byParent.set(layer.parentId, list);
   }
   for (const list of byParent.values()) {
-    list.sort((a, b) => a.order - b.order);
+    // Display topmost layers first; persisted order remains bottom-to-top.
+    list.sort((a, b) => b.order - a.order);
   }
   const build = (parentId: string | null): LayerTreeNode[] =>
     (byParent.get(parentId) ?? []).map((layer) => {
@@ -48,5 +49,8 @@ export function flattenLayerTree(
     }
   };
   visit(nodes, null);
-  return ordered.map((layer, order) => ({ ...layer, order }));
+  return ordered.map((layer, index) => ({
+    ...layer,
+    order: ordered.length - index,
+  }));
 }

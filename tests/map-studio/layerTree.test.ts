@@ -91,13 +91,13 @@ describe('LayerTree', () => {
       }),
     ]);
     expect(wrapper.findAll('.layer-name').map((node) => node.text())).toEqual([
-      'Root',
       'Folder',
       'Child',
+      'Root',
     ]);
     const rows = wrapper.findAll('.sortable-layer-node');
     expect(rows[0].attributes('style')).toContain('margin-inline-start: 0px');
-    expect(rows[2].attributes('style')).toContain('margin-inline-start: 14px');
+    expect(rows[1].attributes('style')).toContain('margin-inline-start: 14px');
   });
 
   it('hides children of collapsed folders and only nests in folders', () => {
@@ -118,8 +118,8 @@ describe('LayerTree', () => {
     ];
     const wrapper = mountTree(layers);
     expect(wrapper.findAll('.layer-name').map((node) => node.text())).toEqual([
-      'Root',
       'Folder',
+      'Root',
     ]);
     expect(mocks.treeOptions.canNest({}, { layer: layers[1] })).toBe(true);
     expect(mocks.treeOptions.canNest({}, { layer: layers[0] })).toBe(false);

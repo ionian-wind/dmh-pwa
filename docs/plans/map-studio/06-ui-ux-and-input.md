@@ -160,12 +160,12 @@ Each panel is independent and remembers its scroll/expanded sections.
 
 ### Layers panel
 
-- Header: “Layers”, add folder, add layer, move up/down.
-- Rows: folder icon (open/closed state), type icon, name, visibility eye, lock, overflow menu. There is no separate expand arrow: clicking a folder row toggles it.
+- Header: “Layers”, add folder, add layer, move up/down. Layers are listed topmost-first; persisted order stays bottom-to-top for rendering.
+- Rows: folder icon (open/closed state), type icon, name, visibility eye, lock, overflow menu. There is no separate expand arrow: clicking a folder row toggles it. Double-click a name to rename.
 - Drag handle on hover; row drag reorders within parent and into folders.
 - The panel is wide enough for settings and short enough to leave the canvas visible. Only the layer tree scrolls; layer/object properties remain fixed and fully visible.
 - Active row highlight; multi-select with Shift/Ctrl/Cmd.
-- Context menu: rename, duplicate, delete, send to front/back, group into folder, lock/unlock, hide/show.
+- Context menu: rename, duplicate, delete, send to front/back and move out of folder.
 - Footer: total objects/shapes count and performance hint.
 - Mobile: full-height sheet, rows 48 px, swipe actions for hide/lock/delete.
 
@@ -177,6 +177,9 @@ Each panel is independent and remembers its scroll/expanded sections.
 - Background: Opacity, Color, Isometric, Background texture, Grid.
 - Fog: Opacity, Fog color, Blend, Advanced.
 - Object: type-specific fields (image tint/shadow, text typography, door, stairs, light).
+- Background: opacity, colour, isometric, grid colour/width.
+- Images/folder: opacity, blend mode and object count/folder membership.
+- Dungeon: opacity, blend mode, floor/wall colours, wall width, blocks-light, grid visibility/colour/width.
 - Multi-selection: only common fields shown; edit applies to all.
 - Live preview; values update canvas immediately; history coalesces slider drags.
 

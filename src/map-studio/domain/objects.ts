@@ -229,7 +229,7 @@ export function hitTestObject(
 ): StudioObject | null {
   for (let index = objects.length - 1; index >= 0; index -= 1) {
     const object = objects[index];
-    if (object.visible === false) continue;
+    if (object.visible === false || object.locked) continue;
     if (pointInBounds(point, objectBounds(object), 0.15)) return object;
   }
   return null;

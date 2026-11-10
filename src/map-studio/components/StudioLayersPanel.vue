@@ -74,7 +74,7 @@ async function deleteLayer(layer: StudioLayer): Promise<void> {
           icon="tabler-arrow-up"
           :title="t('mapStudio.moveUp')"
           @click="
-            store.activeLayerId && store.moveLayer(store.activeLayerId, -1)
+            store.settingsLayerId && store.moveLayer(store.settingsLayerId, 1)
           "
         />
         <QBtn
@@ -84,7 +84,7 @@ async function deleteLayer(layer: StudioLayer): Promise<void> {
           icon="tabler-arrow-down"
           :title="t('mapStudio.moveDown')"
           @click="
-            store.activeLayerId && store.moveLayer(store.activeLayerId, 1)
+            store.settingsLayerId && store.moveLayer(store.settingsLayerId, -1)
           "
         />
       </span>
@@ -154,6 +154,32 @@ async function deleteLayer(layer: StudioLayer): Promise<void> {
                       <QIcon name="tabler-pencil" size="16px" />
                     </QItemSection>
                     <QItemSection>{{ t('mapStudio.rename') }}</QItemSection>
+                  </QItem>
+                  <QItem clickable @click="store.duplicateLayer(layer.id)">
+                    <QItemSection side>
+                      <QIcon name="tabler-copy" size="16px" />
+                    </QItemSection>
+                    <QItemSection>{{ t('mapStudio.duplicate') }}</QItemSection>
+                  </QItem>
+                  <QItem
+                    clickable
+                    @click="store.reorderLayerToEdge(layer.id, 'front')"
+                  >
+                    <QItemSection side>
+                      <QIcon name="tabler-arrow-up" size="16px" />
+                    </QItemSection>
+                    <QItemSection>{{
+                      t('mapStudio.bringToFront')
+                    }}</QItemSection>
+                  </QItem>
+                  <QItem
+                    clickable
+                    @click="store.reorderLayerToEdge(layer.id, 'back')"
+                  >
+                    <QItemSection side>
+                      <QIcon name="tabler-arrow-down" size="16px" />
+                    </QItemSection>
+                    <QItemSection>{{ t('mapStudio.sendToBack') }}</QItemSection>
                   </QItem>
                   <QItem
                     v-if="layer.parentId"

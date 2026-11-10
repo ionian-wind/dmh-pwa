@@ -51,5 +51,13 @@ describe('map studio UVTT export', () => {
     const uvtt = buildUvtt(map, '');
     expect(uvtt.line_of_sight).toEqual([]);
     expect(uvtt.portals).toEqual([]);
+
+    const visibleMap = createMap(createProject().id);
+    const images = visibleMap.layers.find((layer) => layer.type === 'images')!;
+    if (images.type !== 'images') throw new Error('missing images');
+    const door = createDoorObject([0, 0], [1, 0], 0);
+    door.visible = false;
+    images.objects.push(door);
+    expect(buildUvtt(visibleMap, '').portals).toEqual([]);
   });
 });

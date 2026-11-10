@@ -103,6 +103,31 @@ describe('map studio layer sorting', () => {
     expect(reorderLayers(map.layers, background.id, 'a', 'after')).toBeNull();
   });
 
+  it('duplicates folders with their children and reorders to edges', () => {
+    setActivePinia(createPinia());
+    const store = useMapStudioStore();
+    store.setMap(createMap(createProject().id));
+    store.addFolder('Folder');
+    const folder = store.map!.layers.find((layer) => layer.type === 'folder')!;
+    const dungeon = store.map!.layers.find(
+      (layer) => layer.type === 'dungeon',
+    )!;
+    store.setLayerParent(dungeon.id, folder.id);
+    const copyId = store.duplicateLayer(folder.id)!;
+    expect(copyId).toBeTruthy();
+    const copy = store.map!.layers.find((layer) => layer.id === copyId)!;
+    const copyChild = store.map!.layers.find(
+      (layer) => layer.parentId === copyId,
+    )!;
+    expect(copy.name).toContain('copy');
+    expect(copyChild).toBeTruthy();
+    store.reorderLayerToEdge(folder.id, 'front');
+    store.reorderLayerToEdge(folder.id, 'back');
+    expect(store.map!.layers.some((layer) => layer.id === folder.id)).toBe(
+      true,
+    );
+  });
+
   it('moves folder children out when the folder is deleted', () => {
     setActivePinia(createPinia());
     const store = useMapStudioStore();
@@ -152,17 +177,17 @@ describe('map studio layer tree', () => {
       createDungeonLayer({ id: 'root-a', order: 0 }),
     ];
     const tree = buildLayerTree(layers);
-    expect(tree.map((node) => node.id)).toEqual(['root-a', 'folder', 'root-b']);
+    expect(tree.map((node) => node.id)).toEqual(['root-b', 'folder', 'root-a']);
     expect(tree[1].children?.map((node) => node.id)).toEqual(['child']);
 
     const flat = flattenLayerTree(tree);
     expect(flat.map((layer) => layer.id)).toEqual([
-      'root-a',
+      'root-b',
       'folder',
       'child',
-      'root-b',
+      'root-a',
     ]);
-    expect(flat.map((layer) => layer.order)).toEqual([0, 1, 2, 3]);
+    expect(flat.map((layer) => layer.order)).toEqual([4, 3, 2, 1]);
     expect(flat.find((layer) => layer.id === 'child')?.parentId).toBe('folder');
   });
 

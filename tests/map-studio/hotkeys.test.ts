@@ -233,6 +233,7 @@ describe('map studio stairs step hotkeys', () => {
     expect(adjustSteps).toHaveBeenCalledWith(-1);
     window.dispatchEvent(new KeyboardEvent('keydown', { key: '6' }));
     expect(setSteps).toHaveBeenCalledWith(6);
+    window.dispatchEvent(new KeyboardEvent('keydown', { key: 'x' }));
     wrapper.unmount();
   });
 });

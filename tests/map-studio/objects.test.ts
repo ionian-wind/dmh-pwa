@@ -12,6 +12,9 @@ import {
 describe('map studio objects', () => {
   it('creates and bounds text, doors and stairs', () => {
     const text = createTextObject('Hall', [1, 2], 1);
+    text.locked = true;
+    expect(hitTestObject([text], [1, 2])).toBeNull();
+    text.locked = false;
     expect(text.shadow.enabled).toBe(false);
     expect(objectBounds(text)).toMatchObject({ x: 1, y: 2 });
     const long = createTextObject('A very long room label', [1, 2], 2, {
@@ -39,6 +42,9 @@ describe('map studio objects', () => {
 
   it('hit-tests topmost objects and moves them', () => {
     const text = createTextObject('Hall', [1, 2], 1);
+    text.locked = true;
+    expect(hitTestObject([text], [1, 2])).toBeNull();
+    text.locked = false;
     const door = createDoorObject([0, 0], [2, 0], 2);
     expect(hitTestObject([text, door], [1, 0.1])?.id).toBe(door.id);
     expect(hitTestObject([text], [20, 20])).toBeNull();

@@ -26,6 +26,11 @@ import {
   type LayerDropPlacement,
 } from '@/map-studio/domain/layers';
 import {
+  buildLayerTree,
+  flattenLayerTree,
+  type LayerTreeNode,
+} from '@/map-studio/domain/layerTree';
+import {
   createDoorObject,
   createStairsObject,
   createTextObject,
@@ -55,6 +60,7 @@ export const useMapStudioStore = defineStore('mapStudio', () => {
   const map = shallowRef<StudioMap | null>(null);
   const maps = shallowRef<StudioMap[]>([]);
   const activeLayerId = ref<string | null>(null);
+  const settingsLayerId = ref<string | null>(null);
   const selectedObjectId = ref<string | null>(null);
   const selectedShapeId = ref<string | null>(null);
   const selectedObjectIds = ref<string[]>([]);
@@ -100,6 +106,16 @@ export const useMapStudioStore = defineStore('mapStudio', () => {
   const autosave = ref<'idle' | 'saving' | 'saved' | 'error'>('idle');
   const loading = ref(false);
   let objectDragSnapshot: StudioMap | null = null;
+
+  const settingsLayer = computed<StudioLayer | null>(() => {
+    const current = map.value;
+    if (!current) return null;
+    return (
+      current.layers.find((layer) => layer.id === settingsLayerId.value) ??
+      current.layers.find((layer) => layer.type === 'dungeon') ??
+      null
+    );
+  });
 
   const activeLayer = computed<DungeonLayer | null>(() => {
     const current = map.value;
@@ -150,6 +166,7 @@ export const useMapStudioStore = defineStore('mapStudio', () => {
     dirty.value = false;
     activeLayerId.value =
       next.layers.find((layer) => layer.type === 'dungeon')?.id ?? null;
+    settingsLayerId.value = activeLayerId.value;
     if (resetHistory) {
       undoStack.value = [];
       redoStack.value = [];
@@ -359,6 +376,7 @@ export const useMapStudioStore = defineStore('mapStudio', () => {
       ...(preset ? { style: structuredClone(preset.style) } : {}),
     });
     activeLayerId.value = layer.id;
+    settingsLayerId.value = layer.id;
     commit({ ...current, layers: [...current.layers, layer] });
   }
 
@@ -376,6 +394,12 @@ export const useMapStudioStore = defineStore('mapStudio', () => {
         createFolderLayer({ name, order: maxOrder + 1 }),
       ],
     });
+  }
+
+  function setSettingsLayer(layerId: string): void {
+    settingsLayerId.value = layerId;
+    const layer = map.value?.layers.find((entry) => entry.id === layerId);
+    if (layer?.type === 'dungeon') activeLayerId.value = layerId;
   }
 
   function toggleFolder(layerId: string): void {
@@ -488,6 +512,138 @@ export const useMapStudioStore = defineStore('mapStudio', () => {
     const target = siblings[index + direction];
     if (!target) return;
     moveLayerRelative(layerId, target.id, direction < 0 ? 'before' : 'after');
+  }
+
+  function duplicateLayer(layerId: string): string | null {
+    const current = map.value;
+    if (!current) return null;
+    const source = current.layers.find((layer) => layer.id === layerId);
+    if (!source) return null;
+    const descendants: StudioLayer[] = [];
+    const collect = (id: string) => {
+      for (const layer of current.layers) {
+        if (layer.parentId === id) {
+          descendants.push(layer);
+          collect(layer.id);
+        }
+      }
+    };
+    collect(layerId);
+    const idMap = new Map<string, string>();
+    const maxOrder = Math.max(
+      -1,
+      ...current.layers.map((layer) => layer.order),
+    );
+    const copies = [source, ...descendants].map((layer, index) => {
+      const id = generateId();
+      idMap.set(layer.id, id);
+      return {
+        ...(JSON.parse(JSON.stringify(layer)) as StudioLayer),
+        id,
+        name: index === 0 ? `${layer.name} copy` : layer.name,
+        order: maxOrder + index + 1,
+      };
+    });
+    const next = copies.map((layer) => ({
+      ...layer,
+      parentId: layer.parentId ? (idMap.get(layer.parentId) ?? null) : null,
+    }));
+    settingsLayerId.value = idMap.get(layerId) ?? settingsLayerId.value;
+    commit({ ...current, layers: [...current.layers, ...next] });
+    return idMap.get(layerId) ?? null;
+  }
+
+  function removeTreeNode(
+    nodes: LayerTreeNode[],
+    layerId: string,
+  ): LayerTreeNode | null {
+    for (let index = 0; index < nodes.length; index += 1) {
+      if (nodes[index].id === layerId) return nodes.splice(index, 1)[0];
+      const found = removeTreeNode(nodes[index].children ?? [], layerId);
+      if (found) return found;
+    }
+    return null;
+  }
+
+  function reorderLayerToEdge(layerId: string, edge: 'front' | 'back'): void {
+    const current = map.value;
+    if (!current) return;
+    const tree = buildLayerTree(current.layers);
+    const node = removeTreeNode(tree, layerId);
+    if (!node) return;
+    if (edge === 'front') tree.unshift(node);
+    else tree.push(node);
+    commit({ ...current, layers: flattenLayerTree(tree) });
+  }
+
+  function setLayerBlendMode(
+    layerId: string,
+    blendMode: StudioLayer['blendMode'],
+  ): void {
+    const current = map.value;
+    if (!current) return;
+    commit({
+      ...current,
+      layers: current.layers.map((layer) =>
+        layer.id === layerId ? { ...layer, blendMode } : layer,
+      ),
+    });
+  }
+
+  function setBackgroundColor(color: string): void {
+    const current = map.value;
+    if (!current) return;
+    commit({
+      ...current,
+      background: {
+        ...current.background,
+        style: { ...current.background.style, color },
+      },
+      layers: current.layers.map((layer) =>
+        layer.type === 'background'
+          ? { ...layer, style: { ...layer.style, color } }
+          : layer,
+      ),
+    });
+  }
+
+  function setBackgroundOpacity(opacity: number): void {
+    const current = map.value;
+    if (!current) return;
+    commit({
+      ...current,
+      background: {
+        ...current.background,
+        style: {
+          ...current.background.style,
+          opacity: Math.min(1, Math.max(0, opacity)),
+        },
+      },
+    });
+  }
+
+  function setGridColor(color: string): void {
+    const current = map.value;
+    if (!current) return;
+    commit({ ...current, grid: { ...current.grid, color } });
+  }
+
+  function setGridWidth(width: number): void {
+    const current = map.value;
+    if (!current) return;
+    commit({
+      ...current,
+      grid: { ...current.grid, width: Math.max(0.5, width) },
+    });
+  }
+
+  function setIsometric(isometric: boolean): void {
+    const current = map.value;
+    if (!current) return;
+    commit({
+      ...current,
+      settings: { ...current.settings, isometric },
+    });
   }
 
   function setLayerStyle(layerId: string, style: DungeonLayerStyle): void {
@@ -729,7 +885,11 @@ export const useMapStudioStore = defineStore('mapStudio', () => {
   function selectObjects(ids: string[]): void {
     selectedObjectIds.value = [...new Set(expandGroupIds(ids))];
     selectedObjectId.value = selectedObjectIds.value.at(-1) ?? null;
-    if (selectedObjectIds.value.length) selectedShapeId.value = null;
+    if (selectedObjectIds.value.length) {
+      selectedShapeId.value = null;
+      const images = imagesLayer.value;
+      if (images) settingsLayerId.value = images.id;
+    }
   }
 
   function toggleObjectSelection(id: string): void {
@@ -1453,6 +1613,8 @@ export const useMapStudioStore = defineStore('mapStudio', () => {
     map,
     maps,
     activeLayerId,
+    settingsLayerId,
+    settingsLayer,
     activeLayer,
     imagesLayer,
     selectedObjectId,
@@ -1536,11 +1698,20 @@ export const useMapStudioStore = defineStore('mapStudio', () => {
     renameLayer,
     removeLayer,
     moveLayer,
+    duplicateLayer,
+    reorderLayerToEdge,
+    setLayerBlendMode,
+    setBackgroundColor,
+    setBackgroundOpacity,
+    setGridColor,
+    setGridWidth,
+    setIsometric,
     setLayerStyle,
     setLayerOpacity,
     undo,
     redo,
     setActiveLayer,
+    setSettingsLayer,
     setTool,
     toggleLayerVisibility,
     toggleLayerLock,

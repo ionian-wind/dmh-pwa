@@ -501,7 +501,9 @@ function onPointerDown(event: PointerEvent): void {
     }
     const object = hitTestObject(
       props.map.layers
-        .filter((layer) => layer.type === 'images' && layer.visible)
+        .filter(
+          (layer) => layer.type === 'images' && layer.visible && !layer.locked,
+        )
         .flatMap((layer) => (layer.type === 'images' ? layer.objects : [])),
       point,
     );
@@ -525,7 +527,8 @@ function onPointerDown(event: PointerEvent): void {
     if (!object) {
       let shapeId: string | null = null;
       for (const layer of [...props.map.layers].reverse()) {
-        if (layer.type !== 'dungeon' || !layer.visible) continue;
+        if (layer.type !== 'dungeon' || !layer.visible || layer.locked)
+          continue;
         for (const shape of [...layer.shapes].reverse()) {
           const polygon = shapeToPolygon(shape);
           if (polygon?.[0] && pointInPolygon(point, polygon[0])) {
@@ -932,7 +935,9 @@ function onPointerUp(event: PointerEvent): void {
     const x2 = Math.max(drag.start[0], current[0]);
     const y2 = Math.max(drag.start[1], current[1]);
     const ids = props.map.layers
-      .filter((layer) => layer.type === 'images' && layer.visible)
+      .filter(
+        (layer) => layer.type === 'images' && layer.visible && !layer.locked,
+      )
       .flatMap((layer) => (layer.type === 'images' ? layer.objects : []))
       .filter((object) => {
         if (!object.visible) return false;
@@ -1136,7 +1141,9 @@ function onDoubleClick(event: MouseEvent): void {
     const point = renderer.value.screenToWorld(sx, sy);
     const object = hitTestObject(
       props.map.layers
-        .filter((layer) => layer.type === 'images' && layer.visible)
+        .filter(
+          (layer) => layer.type === 'images' && layer.visible && !layer.locked,
+        )
         .flatMap((layer) => (layer.type === 'images' ? layer.objects : [])),
       point,
     );
@@ -1285,7 +1292,9 @@ function onContextMenu(event: MouseEvent): void {
   const point = renderer.value.screenToWorld(sx, sy);
   const object = hitTestObject(
     props.map.layers
-      .filter((layer) => layer.type === 'images' && layer.visible)
+      .filter(
+        (layer) => layer.type === 'images' && layer.visible && !layer.locked,
+      )
       .flatMap((layer) => (layer.type === 'images' ? layer.objects : [])),
     point,
   );

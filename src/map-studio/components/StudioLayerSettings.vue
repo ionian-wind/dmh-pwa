@@ -3,95 +3,131 @@ import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { confirm, prompt } from '@/dialogs';
 import { useMapStudioStore } from '@/map-studio/stores/mapStudioStore';
-import type {
-  DungeonLayer,
-  StudioLayer,
-} from '@/map-studio/domain/document/types';
+import type { StudioLayer } from '@/map-studio/domain/document/types';
 
 const { t } = useI18n();
 const store = useMapStudioStore();
-const activeLayer = computed<DungeonLayer | null>(() => store.activeLayer);
+const layer = computed<StudioLayer | null>(() => store.settingsLayer);
 const folders = computed<StudioLayer[]>(() =>
   (store.map?.layers ?? []).filter(
-    (layer: StudioLayer) => layer.type === 'folder',
+    (entry: StudioLayer) => entry.type === 'folder',
   ),
 );
 
+const canDelete = computed(
+  () => layer.value?.type === 'dungeon' || layer.value?.type === 'folder',
+);
+
 async function renameLayer(): Promise<void> {
-  const layer = activeLayer.value;
-  if (!layer) return;
+  const current = layer.value;
+  if (!current) return;
   const name = await prompt(t('mapStudio.layerName'), {
-    modelValue: layer.name,
+    modelValue: current.name,
   });
-  if (name) store.renameLayer(layer.id, name);
+  if (name) store.renameLayer(current.id, name);
 }
 
 async function deleteLayer(): Promise<void> {
-  const layer = activeLayer.value;
-  if (!layer) return;
-  if (!(await confirm(t('common.confirmDelete', { title: layer.name })))) {
+  const current = layer.value;
+  if (!current || !canDelete.value) return;
+  if (!(await confirm(t('common.confirmDelete', { title: current.name })))) {
     return;
   }
-  store.removeLayer(layer.id);
+  store.removeLayer(current.id);
 }
 
 function setFloorColor(event: Event): void {
-  const layer = activeLayer.value;
-  if (!layer) return;
+  const current = layer.value;
+  if (current?.type !== 'dungeon') return;
   const color = (event.target as HTMLInputElement).value;
-  store.setLayerStyle(layer.id, {
-    ...layer.style,
-    floor: { ...layer.style.floor, color },
+  store.setLayerStyle(current.id, {
+    ...current.style,
+    floor: { ...current.style.floor, color },
   });
 }
 
 function setWallColor(event: Event): void {
-  const layer = activeLayer.value;
-  if (!layer) return;
+  const current = layer.value;
+  if (current?.type !== 'dungeon') return;
   const color = (event.target as HTMLInputElement).value;
-  store.setLayerStyle(layer.id, {
-    ...layer.style,
-    walls: { ...layer.style.walls, color },
+  store.setLayerStyle(current.id, {
+    ...current.style,
+    walls: { ...current.style.walls, color },
   });
 }
 
 function setWallWidth(event: Event): void {
-  const layer = activeLayer.value;
-  if (!layer) return;
+  const current = layer.value;
+  if (current?.type !== 'dungeon') return;
   const width = Math.max(
     0.01,
     Number((event.target as HTMLInputElement).value),
   );
-  store.setLayerStyle(layer.id, {
-    ...layer.style,
-    walls: { ...layer.style.walls, width },
+  store.setLayerStyle(current.id, {
+    ...current.style,
+    walls: { ...current.style.walls, width },
+  });
+}
+
+function setWallGridColor(event: Event): void {
+  const current = layer.value;
+  if (current?.type !== 'dungeon') return;
+  const color = (event.target as HTMLInputElement).value;
+  store.setLayerStyle(current.id, {
+    ...current.style,
+    grid: { ...current.style.grid, color },
+  });
+}
+
+function setWallGridWidth(event: Event): void {
+  const current = layer.value;
+  if (current?.type !== 'dungeon') return;
+  const width = Math.max(0.5, Number((event.target as HTMLInputElement).value));
+  store.setLayerStyle(current.id, {
+    ...current.style,
+    grid: { ...current.style.grid, width },
   });
 }
 
 function toggleLayerGrid(): void {
-  const layer = activeLayer.value;
-  if (!layer) return;
-  store.setLayerStyle(layer.id, {
-    ...layer.style,
-    grid: { ...layer.style.grid, visible: !layer.style.grid.visible },
+  const current = layer.value;
+  if (current?.type !== 'dungeon') return;
+  store.setLayerStyle(current.id, {
+    ...current.style,
+    grid: { ...current.style.grid, visible: !current.style.grid.visible },
+  });
+}
+
+function toggleBlocksLight(): void {
+  const current = layer.value;
+  if (current?.type !== 'dungeon') return;
+  store.setLayerStyle(current.id, {
+    ...current.style,
+    walls: {
+      ...current.style.walls,
+      blocksLight: !current.style.walls.blocksLight,
+    },
   });
 }
 
 function setParent(event: Event): void {
-  const layer = activeLayer.value;
-  if (!layer) return;
+  const current = layer.value;
+  if (!current) return;
   store.setLayerParent(
-    layer.id,
+    current.id,
     (event.target as HTMLSelectElement).value || null,
   );
 }
 </script>
 
 <template>
-  <template v-if="activeLayer">
-    <label v-if="folders.length" class="studio-field">
+  <template v-if="layer">
+    <label
+      v-if="layer.type === 'dungeon' && folders.length"
+      class="studio-field"
+    >
       <span>{{ t('mapStudio.folder') }}</span>
-      <select :value="activeLayer.parentId ?? ''" @change="setParent">
+      <select :value="layer.parentId ?? ''" @change="setParent">
         <option value="">{{ t('mapStudio.noFolder') }}</option>
         <option v-for="folder in folders" :key="folder.id" :value="folder.id">
           {{ folder.name }}
@@ -114,6 +150,7 @@ function setParent(event: Event): void {
           @click="renameLayer"
         />
         <QBtn
+          v-if="canDelete"
           flat
           dense
           round
@@ -123,6 +160,8 @@ function setParent(event: Event): void {
         />
       </span>
     </div>
+    <div class="studio-layer-name-line">{{ layer.name }}</div>
+
     <label class="studio-field">
       <span>{{ t('mapStudio.opacity') }}</span>
       <input
@@ -130,47 +169,153 @@ function setParent(event: Event): void {
         min="0"
         max="1"
         step="0.05"
-        :value="activeLayer.opacity"
+        :value="layer.opacity"
         @input="
-          store.setLayerOpacity(
-            activeLayer.id,
-            Number(($event.target as HTMLInputElement).value),
-          )
+          layer.type === 'background'
+            ? store.setBackgroundOpacity(
+                Number(($event.target as HTMLInputElement).value),
+              )
+            : store.setLayerOpacity(
+                layer.id,
+                Number(($event.target as HTMLInputElement).value),
+              )
         "
       />
     </label>
     <label class="studio-field">
-      <span>{{ t('mapStudio.floor') }}</span>
-      <input
-        type="color"
-        :value="activeLayer.style.floor.color"
-        @input="setFloorColor"
-      />
+      <span>{{ t('mapStudio.blendMode') }}</span>
+      <select
+        :value="layer.blendMode"
+        @change="
+          store.setLayerBlendMode(
+            layer.id,
+            ($event.target as HTMLSelectElement)
+              .value as typeof layer.blendMode,
+          )
+        "
+      >
+        <option value="normal">Normal</option>
+        <option value="add">Add</option>
+        <option value="multiply">Multiply</option>
+        <option value="screen">Screen</option>
+      </select>
     </label>
-    <label class="studio-field">
-      <span>{{ t('mapStudio.walls') }}</span>
-      <input
-        type="color"
-        :value="activeLayer.style.walls.color"
-        @input="setWallColor"
-      />
-      <input
-        class="studio-number"
-        type="number"
-        min="0.01"
-        step="0.01"
-        :value="activeLayer.style.walls.width"
-        @input="setWallWidth"
-      />
-    </label>
-    <label class="studio-field studio-field--check">
-      <input
-        type="checkbox"
-        :checked="activeLayer.style.grid.visible"
-        @change="toggleLayerGrid"
-      />
-      <span>{{ t('mapStudio.showLayerGrid') }}</span>
-    </label>
+
+    <template v-if="layer.type === 'dungeon'">
+      <label class="studio-field">
+        <span>{{ t('mapStudio.floor') }}</span>
+        <input
+          type="color"
+          :value="layer.style.floor.color"
+          @input="setFloorColor"
+        />
+      </label>
+      <label class="studio-field">
+        <span>{{ t('mapStudio.walls') }}</span>
+        <input
+          type="color"
+          :value="layer.style.walls.color"
+          @input="setWallColor"
+        />
+        <input
+          class="studio-number"
+          type="number"
+          min="0.01"
+          step="0.01"
+          :value="layer.style.walls.width"
+          @input="setWallWidth"
+        />
+      </label>
+      <label class="studio-field studio-field--check">
+        <input
+          type="checkbox"
+          :checked="layer.style.walls.blocksLight"
+          @change="toggleBlocksLight"
+        />
+        <span>{{ t('mapStudio.blocksLight') }}</span>
+      </label>
+      <label class="studio-field studio-field--check">
+        <input
+          type="checkbox"
+          :checked="layer.style.grid.visible"
+          @change="toggleLayerGrid"
+        />
+        <span>{{ t('mapStudio.showLayerGrid') }}</span>
+      </label>
+      <label class="studio-field">
+        <span>{{ t('mapStudio.gridColour') }}</span>
+        <input
+          type="color"
+          :value="layer.style.grid.color"
+          @input="setWallGridColor"
+        />
+      </label>
+      <label class="studio-field">
+        <span>{{ t('mapStudio.gridWidth') }}</span>
+        <input
+          class="studio-number"
+          type="number"
+          min="0.5"
+          step="0.5"
+          :value="layer.style.grid.width"
+          @input="setWallGridWidth"
+        />
+      </label>
+    </template>
+
+    <template v-if="layer.type === 'background'">
+      <label class="studio-field">
+        <span>{{ t('mapStudio.colour') }}</span>
+        <input
+          type="color"
+          :value="store.map?.background.style.color ?? '#ffffff'"
+          @input="
+            store.setBackgroundColor(($event.target as HTMLInputElement).value)
+          "
+        />
+      </label>
+      <label class="studio-field studio-field--check">
+        <input
+          type="checkbox"
+          :checked="store.map?.settings.isometric ?? false"
+          @change="
+            store.setIsometric(($event.target as HTMLInputElement).checked)
+          "
+        />
+        <span>{{ t('mapStudio.isometric') }}</span>
+      </label>
+      <label class="studio-field">
+        <span>{{ t('mapStudio.gridColour') }}</span>
+        <input
+          type="color"
+          :value="store.map?.grid.color ?? '#000000'"
+          @input="store.setGridColor(($event.target as HTMLInputElement).value)"
+        />
+      </label>
+      <label class="studio-field">
+        <span>{{ t('mapStudio.gridWidth') }}</span>
+        <input
+          class="studio-number"
+          type="number"
+          min="0.5"
+          step="0.5"
+          :value="store.map?.grid.width ?? 1"
+          @input="
+            store.setGridWidth(
+              Number(($event.target as HTMLInputElement).value),
+            )
+          "
+        />
+      </label>
+    </template>
+
+    <div v-if="layer.type === 'images'" class="studio-layer-summary">
+      {{
+        t('mapStudio.objectsCount', {
+          count: store.imagesLayer?.objects.length ?? 0,
+        })
+      }}
+    </div>
   </template>
 </template>
 
@@ -198,7 +343,14 @@ function setParent(event: Event): void {
 .studio-number {
   width: 52px;
 }
-.studio-text-input {
-  width: 120px;
+.studio-layer-name-line {
+  padding: 2px 6px 6px;
+  font-size: 11px;
+  opacity: 0.7;
+}
+.studio-layer-summary {
+  padding: 6px;
+  font-size: 11px;
+  opacity: 0.7;
 }
 </style>

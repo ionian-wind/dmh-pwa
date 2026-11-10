@@ -59,9 +59,9 @@ Status: **in progress — editor surface, object interactions, shape selection, 
 ## M2 — Editor surface
 
 - [x] Layer create/rename/reorder/delete/folders (drag-sorting with `@vue-dnd-kit/core` v3)
-- [x] Explicit add-folder button, per-layer menu (rename, move to root, delete), scrolling layer tree separate from settings
+- [x] Explicit add-folder button, per-layer menu (rename, duplicate, front/back, move to root, delete), double-click rename, topmost-first order, scrolling layer tree separate from settings
 - [x] Folder rows use `folder-open`/`folder` icons and toggle on row click (no separate chevron)
-- [x] Full layer settings (floor/walls/grid/background)
+- [x] Layer settings for Dungeon/Background/Images/folders: opacity, blend mode, floor/walls, blocks-light, grid colour/width, background colour/isometric
 - [x] Object tool: click/Shift-click selection, marquee, grouped selection, live drag, group resize/rotate, nudge, copy/paste, context menu, z-order
 - [x] Grouping/ungrouping, z-order, flip, duplicate and object context menu
 - [x] Multi-object selection: combined selection bounds, group resize and group rotate
@@ -135,3 +135,4 @@ Status: **in progress — editor surface, object interactions, shape selection, 
 | 2026-11-10 | Stairs tool validation       | Add steps-per-cell, stroke and rough tool settings, step shortcuts, styled rendering and object settings (2089 tests / 248 files; coverage branches 87.00%)                                                                                                   |
 | 2026-11-10 | Left-side tool settings      | Move tool settings out of the bottom toolbar into the left sidebar under Presets/Clipboard; bottom toolbar now contains tools only (2091 tests / 249 files; coverage branches 87.00%)                                                                         |
 | 2026-11-10 | Door gaps and UVTT           | Add independent door endpoint handles, UVTT portal export, and finish the left-sidebar tool settings layout                                                                                                                                                   |
+| 2026-11-10 | Layer parity fixes           | Correct topmost-first layer order, double-click rename, duplicate/front/back, lock enforcement, selectable background/images/folder settings, blend mode, blocks-light and background grid controls (2103 tests / 251 files; coverage branches 87.01%)        |

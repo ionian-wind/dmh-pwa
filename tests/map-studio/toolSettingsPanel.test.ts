@@ -50,6 +50,8 @@ describe('StudioToolSettingsPanel', () => {
     store.setTool('circle');
     const wrapper = mountPanel(pinia);
     const sides = wrapper.find('.studio-sides-input');
+    await sides.setValue('0');
+    expect(store.toolSettings.sides).toBe(1);
     await sides.setValue('6');
     expect(store.toolSettings.sides).toBe(6);
     const drawTo = wrapper

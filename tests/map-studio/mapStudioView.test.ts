@@ -524,9 +524,9 @@ describe('MapStudioView UI', () => {
     await flushPromises();
     const added = store.activeLayer!;
     const before = added.order;
-    await wrapper.find('[title="Move layer up"]').trigger('click');
-    expect(store.activeLayer?.order).not.toBe(before);
     await wrapper.find('[title="Move layer down"]').trigger('click');
+    expect(store.activeLayer?.order).not.toBe(before);
+    await wrapper.find('[title="Move layer up"]').trigger('click');
     expect(store.activeLayer?.id).toBe(added.id);
     wrapper.unmount();
   });
