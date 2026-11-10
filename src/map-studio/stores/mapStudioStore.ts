@@ -771,6 +771,45 @@ export const useMapStudioStore = defineStore('mapStudio', () => {
     dirty.value = true;
   }
 
+  function updateDoorEndpointLive(
+    id: string,
+    endpoint: 'a' | 'b',
+    point: Point,
+  ): void {
+    const current = map.value;
+    const layer = imagesLayer.value;
+    if (!current || !layer) return;
+    map.value = {
+      ...current,
+      updatedAt: Date.now(),
+      layers: current.layers.map((entry) =>
+        entry.id === layer.id
+          ? {
+              ...layer,
+              objects: layer.objects.map((object) => {
+                if (object.id !== id || object.type !== 'door') return object;
+                const next = { ...object, [endpoint]: point };
+                const width = Math.max(
+                  0.2,
+                  Math.hypot(next.b[0] - next.a[0], next.b[1] - next.a[1]),
+                );
+                return {
+                  ...next,
+                  transform: {
+                    ...next.transform,
+                    x: Math.min(next.a[0], next.b[0]),
+                    y: Math.min(next.a[1], next.b[1]),
+                    width,
+                  },
+                };
+              }),
+            }
+          : entry,
+      ),
+    };
+    dirty.value = true;
+  }
+
   function rotateSelectedObject(rotation: number): void {
     const object = selectedObject.value;
     if (!object) return;
@@ -1457,6 +1496,7 @@ export const useMapStudioStore = defineStore('mapStudio', () => {
     moveSelectedObjectLive,
     patchSelectedObjectLive,
     rotateSelectedObject,
+    updateDoorEndpointLive,
     resizeSelectedObjectsLive,
     rotateSelectedObjectsLive,
     endObjectDrag,

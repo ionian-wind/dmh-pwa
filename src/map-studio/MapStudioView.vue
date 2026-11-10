@@ -7,8 +7,10 @@ import CanvasHost from '@/map-studio/components/CanvasHost.vue';
 import StudioHeader from '@/map-studio/components/StudioHeader.vue';
 import StudioPresetsPanel from '@/map-studio/components/StudioPresetsPanel.vue';
 import StudioClipboardPanel from '@/map-studio/components/StudioClipboardPanel.vue';
+import StudioToolSettingsPanel from '@/map-studio/components/StudioToolSettingsPanel.vue';
 import StudioLayersPanel from '@/map-studio/components/StudioLayersPanel.vue';
 import { useMapStudioStore } from '@/map-studio/stores/mapStudioStore';
+import { buildUvtt } from '@/map-studio/domain/export/uvtt';
 import { useMapStudioAutosave } from '@/map-studio/composables/useMapStudioAutosave';
 import { useStudioHotkeys } from '@/map-studio/composables/useStudioHotkeys';
 import {
@@ -177,30 +179,6 @@ const toolbar = computed(() => [
     label: t('mapStudio.select'),
   },
 ]);
-const divisions = [1, 2, 3, 4, 6, 8, 9].map((value) => ({
-  label: `1/${value}`,
-  value,
-}));
-const roughnessOptions = [0, 1, 2, 3].map((value) => ({
-  label: String(value),
-  value,
-}));
-const doorVariantOptions = [
-  { label: '1', value: 0 },
-  { label: '2', value: 1 },
-];
-const drawToOptions = computed(() => [
-  { label: t('mapStudio.point'), value: 'point' },
-  { label: t('mapStudio.edge'), value: 'edge' },
-]);
-const fontOptions = [
-  'Georgia, serif',
-  'Arial, sans-serif',
-  'Courier New, monospace',
-  'Times New Roman, serif',
-  'Verdana, sans-serif',
-  'Trebuchet MS, sans-serif',
-];
 const editingTextId = ref<string | null>(null);
 const textDraft = ref('');
 const textEditWasNew = ref(false);
@@ -320,6 +298,14 @@ function rotateSelected(rotation: number): void {
 
 function rotateSelection(delta: number): void {
   store.rotateSelectedObjectsLive(delta);
+}
+
+function updateDoorEndpoint(payload: {
+  id: string;
+  endpoint: 'a' | 'b';
+  point: Point;
+}): void {
+  store.updateDoorEndpointLive(payload.id, payload.endpoint, payload.point);
 }
 
 function editText(id: string): void {
@@ -480,6 +466,22 @@ async function exportPdf(): Promise<void> {
   download(pdf.output('blob'), `${map.value.name || 'map'}.pdf`);
 }
 
+async function exportUvtt(): Promise<void> {
+  if (!renderer.value || !map.value) return;
+  const blob = await renderer.value.exportImage(70, 'image/png');
+  const dataUrl = await new Promise<string>((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result));
+    reader.onerror = () => reject(reader.error);
+    reader.readAsDataURL(blob);
+  });
+  const payload = buildUvtt(map.value, dataUrl.split(',')[1] ?? '');
+  download(
+    new Blob([JSON.stringify(payload)], { type: 'application/json' }),
+    `${map.value.name || 'map'}.uvtt`,
+  );
+}
+
 async function openApplyDialog(): Promise<void> {
   locationOptions.value = await listStudioLocationOptions();
   targetLocationId.value = locationOptions.value[0]?.id ?? null;
@@ -524,6 +526,7 @@ async function applyToLocation(): Promise<void> {
       @apply="openApplyDialog"
       @export="exportMap"
       @export-pdf="exportPdf"
+      @export-uvtt="exportUvtt"
     />
 
     <div v-if="creating" class="studio-loading">
@@ -562,300 +565,6 @@ async function applyToLocation(): Promise<void> {
           :title="entry.label"
           @click="store.setTool(entry.id)"
         />
-        <QSeparator vertical class="q-mx-sm" />
-        <QToggle
-          v-model="store.toolSettings.snap"
-          dense
-          :label="t('mapStudio.snap')"
-        />
-        <QBtn
-          flat
-          dense
-          no-caps
-          :icon="
-            store.toolSettings.mode === 'erase'
-              ? 'tabler-eraser'
-              : 'tabler-pencil'
-          "
-          :label="
-            store.toolSettings.mode === 'erase'
-              ? t('mapStudio.erase')
-              : t('mapStudio.draw')
-          "
-          @click="
-            store.toolSettings.mode =
-              store.toolSettings.mode === 'erase' ? 'draw' : 'erase'
-          "
-        />
-        <QSelect
-          v-model="store.toolSettings.division"
-          dense
-          outlined
-          emit-value
-          map-options
-          :options="divisions"
-          :label="t('mapStudio.division')"
-          class="studio-division"
-        />
-        <QToggle
-          v-model="store.toolSettings.roughMode"
-          dense
-          :label="t('mapStudio.rough')"
-        />
-        <QToggle
-          v-if="
-            store.tool === 'polygon' ||
-            store.tool === 'path' ||
-            store.tool === 'wall'
-          "
-          v-model="store.toolSettings.smooth"
-          dense
-          :label="t('mapStudio.smooth')"
-        />
-        <template v-if="store.tool === 'wall'">
-          <QInput
-            v-model.number="store.toolSettings.wallWidth"
-            dense
-            outlined
-            type="number"
-            min="0.01"
-            step="0.01"
-            :label="t('mapStudio.width')"
-            class="studio-sides-input"
-          />
-          <QToggle
-            v-model="store.toolSettings.wallDash"
-            dense
-            :label="t('mapStudio.dash')"
-          />
-          <QInput
-            v-if="store.toolSettings.wallDash"
-            v-model.number="store.toolSettings.wallDashSize"
-            dense
-            outlined
-            type="number"
-            min="0.05"
-            step="0.05"
-            :label="t('mapStudio.dashSize')"
-            class="studio-sides-input"
-          />
-        </template>
-        <template v-if="store.tool === 'stairs'">
-          <QInput
-            v-model.number="store.toolSettings.stairsSteps"
-            dense
-            outlined
-            type="number"
-            min="1"
-            step="1"
-            :label="t('mapStudio.steps')"
-            class="studio-sides-input"
-          />
-          <input
-            type="color"
-            :value="store.toolSettings.stairsStroke"
-            :aria-label="t('mapStudio.stroke')"
-            @input="
-              store.toolSettings.stairsStroke = (
-                $event.target as HTMLInputElement
-              ).value
-            "
-          />
-          <QSelect
-            v-model="store.toolSettings.stairsRough"
-            dense
-            outlined
-            emit-value
-            map-options
-            :options="roughnessOptions"
-            :label="t('mapStudio.rough')"
-            class="studio-division"
-          />
-        </template>
-        <template v-if="store.tool === 'door'">
-          <QSelect
-            v-model="store.toolSettings.doorVariant"
-            dense
-            outlined
-            emit-value
-            map-options
-            :options="doorVariantOptions"
-            :label="t('mapStudio.variant')"
-            class="studio-division"
-          />
-          <input
-            type="color"
-            :value="store.toolSettings.doorFill"
-            :aria-label="t('mapStudio.fill')"
-            @input="
-              store.toolSettings.doorFill = (
-                $event.target as HTMLInputElement
-              ).value
-            "
-          />
-          <input
-            type="color"
-            :value="store.toolSettings.doorStroke"
-            :aria-label="t('mapStudio.stroke')"
-            @input="
-              store.toolSettings.doorStroke = (
-                $event.target as HTMLInputElement
-              ).value
-            "
-          />
-          <QSelect
-            v-model="store.toolSettings.doorRough"
-            dense
-            outlined
-            emit-value
-            map-options
-            :options="roughnessOptions"
-            :label="t('mapStudio.rough')"
-            class="studio-division"
-          />
-        </template>
-        <template v-if="store.tool === 'text'">
-          <QSelect
-            v-model="store.toolSettings.text.fontFamily"
-            dense
-            outlined
-            :options="fontOptions"
-            :label="t('mapStudio.font')"
-            class="studio-text-font"
-          />
-          <QInput
-            v-model.number="store.toolSettings.text.fontSize"
-            dense
-            outlined
-            type="number"
-            min="0.05"
-            step="0.01"
-            :label="t('mapStudio.fontSize')"
-            class="studio-sides-input"
-          />
-          <input
-            type="color"
-            :value="store.toolSettings.text.color"
-            :aria-label="t('mapStudio.colour')"
-            @input="
-              store.toolSettings.text.color = (
-                $event.target as HTMLInputElement
-              ).value
-            "
-          />
-          <QBtnGroup flat>
-            <QBtn
-              v-for="alignment in ['left', 'center', 'right'] as const"
-              :key="alignment"
-              flat
-              dense
-              round
-              :icon="`tabler-align-${alignment}`"
-              :class="{
-                'studio-tool--active':
-                  store.toolSettings.text.align === alignment,
-              }"
-              :aria-label="t(`mapStudio.${alignment}`)"
-              @click="store.toolSettings.text.align = alignment"
-            />
-          </QBtnGroup>
-          <QToggle
-            v-model="store.toolSettings.text.shadow.enabled"
-            dense
-            :label="t('mapStudio.dropShadow')"
-          />
-          <template v-if="store.toolSettings.text.shadow.enabled">
-            <input
-              type="color"
-              :value="store.toolSettings.text.shadow.color"
-              :aria-label="t('mapStudio.shadowColor')"
-              @input="
-                store.toolSettings.text.shadow.color = (
-                  $event.target as HTMLInputElement
-                ).value
-              "
-            />
-            <QInput
-              v-model.number="store.toolSettings.text.shadow.offsetX"
-              dense
-              outlined
-              type="number"
-              step="0.01"
-              :label="t('mapStudio.offsetX')"
-              class="studio-sides-input"
-            />
-            <QInput
-              v-model.number="store.toolSettings.text.shadow.offsetY"
-              dense
-              outlined
-              type="number"
-              step="0.01"
-              :label="t('mapStudio.offsetY')"
-              class="studio-sides-input"
-            />
-            <QInput
-              v-model.number="store.toolSettings.text.shadow.opacity"
-              dense
-              outlined
-              type="number"
-              min="0"
-              max="1"
-              step="0.05"
-              :label="t('mapStudio.opacity')"
-              class="studio-sides-input"
-            />
-          </template>
-        </template>
-        <QInput
-          v-if="store.tool === 'path'"
-          v-model.number="store.toolSettings.pathRadius"
-          dense
-          outlined
-          type="number"
-          :label="t('mapStudio.radius')"
-          class="studio-division"
-        />
-        <QInput
-          v-if="store.tool === 'rectangle'"
-          v-model.number="store.toolSettings.cornerRadius"
-          dense
-          outlined
-          type="number"
-          :label="t('mapStudio.cornerRadius')"
-          class="studio-division"
-        />
-        <template v-if="store.tool === 'circle'">
-          <QSlider
-            :model-value="store.toolSettings.sides"
-            :min="1"
-            :max="12"
-            :step="1"
-            dense
-            class="studio-sides-slider"
-            @update:model-value="setCircleSides"
-          />
-          <QInput
-            :model-value="store.toolSettings.sides"
-            dense
-            outlined
-            type="number"
-            min="1"
-            max="12"
-            :label="t('mapStudio.sides')"
-            class="studio-sides-input"
-            @update:model-value="setCircleSides"
-          />
-          <QSelect
-            v-model="store.toolSettings.drawTo"
-            dense
-            outlined
-            emit-value
-            map-options
-            :options="drawToOptions"
-            :label="t('mapStudio.drawTo')"
-            class="studio-division"
-          />
-        </template>
       </div>
 
       <div class="studio-body">
@@ -896,6 +605,7 @@ async function applyToLocation(): Promise<void> {
           @resizeObject="resizeSelected"
           @rotateObject="rotateSelected"
           @rotateSelection="rotateSelection"
+          @doorEndpointLive="updateDoorEndpoint"
           @ready="onRendererReady"
         />
         <input
@@ -978,8 +688,11 @@ async function applyToLocation(): Promise<void> {
           </button>
         </div>
 
-        <StudioPresetsPanel />
-        <StudioClipboardPanel @paste="startGeometryPaste" />
+        <div class="studio-left-sidebar">
+          <StudioPresetsPanel />
+          <StudioClipboardPanel @paste="startGeometryPaste" />
+          <StudioToolSettingsPanel />
+        </div>
 
         <StudioLayersPanel />
       </div>
@@ -1037,6 +750,19 @@ async function applyToLocation(): Promise<void> {
   flex-direction: column;
   color: var(--color-text);
   background: var(--color-background);
+}
+.studio-left-sidebar {
+  position: absolute;
+  top: 12px;
+  bottom: 90px;
+  left: 12px;
+  z-index: 3;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 224px;
+  overflow-y: auto;
+  padding-right: 2px;
 }
 .studio-body {
   position: relative;

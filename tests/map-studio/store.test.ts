@@ -154,6 +154,11 @@ describe('map studio shape helpers', () => {
       stroke: '#445566',
       rough: 2,
     });
+    const door = store.imagesLayer!.objects[0];
+    store.updateDoorEndpointLive(door.id, 'b', [3, 0]);
+    const updated = store.imagesLayer!.objects[0];
+    expect(updated.type === 'door' && updated.b).toEqual([3, 0]);
+    expect(updated.transform.width).toBe(3);
   });
 
   it('adds circles and polygons in draw and erase modes', () => {

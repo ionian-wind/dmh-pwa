@@ -208,9 +208,10 @@ Flow:
   - variant 2: two split leaves with a centre gap
 - Tool settings: variant, fill colour, stroke colour and rough level (0–3); the object settings mirror them.
 - Placed in the Images layer/folder.
-- Edit via Object tool: move/resize/rotate through the normal handles; the door fields are in Layer Settings.
+- Edit via Object tool: move/resize/rotate through normal handles; the two door endpoints have independent drag handles.
 - Roughness is applied to the rendered panel outline.
-- Not yet implemented: editing door endpoints independently, wall-gap masking, and UVTT door export.
+- Doors render above room walls, so the filled panel visually masks the wall beneath it.
+- UVTT export writes door bounds/positions as portals.
 
 ## 14. Stairs tool
 

@@ -47,11 +47,7 @@ const presets = DUNGEON_PRESETS;
 
 <style scoped>
 .studio-presets {
-  position: absolute;
-  top: 12px;
-  left: 12px;
-  z-index: 3;
-  width: 214px;
+  width: 100%;
   padding: 8px;
   background: var(--color-background);
   border: 1px solid var(--color-border-light);

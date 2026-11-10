@@ -102,12 +102,8 @@ function deleteClip(id: string): void {
 
 <style scoped>
 .studio-clipboard {
-  position: absolute;
-  top: 264px;
-  left: 12px;
-  z-index: 3;
-  width: 214px;
-  max-height: 240px;
+  width: 100%;
+  max-height: 220px;
   padding: 8px;
   overflow-y: auto;
   background: var(--color-background);

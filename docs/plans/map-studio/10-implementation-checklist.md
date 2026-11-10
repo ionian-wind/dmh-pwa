@@ -68,7 +68,7 @@ Status: **in progress — editor surface, object interactions, shape selection, 
 - [x] Multi-object batch panel: common opacity/rotation/type fields and batch duplicate, z-order, flip and delete actions
 - [ ] Images panel, upload, drag/drop, favorites
 - [x] Text tool: click-to-place inline editing, second-click edit, font/size/colour/alignment, drop shadow, object settings
-- [x] Door tool: two-point placement, two variants, fill/stroke colours, rough outline, object settings
+- [x] Door tool: two-point placement, two variants, fill/stroke colours, rough outline, endpoint handles, object settings, UVTT portals
 - [x] Stairs tool: three-point placement, steps-per-cell, stroke, rough, bracket/digit shortcuts, object settings
 - [x] Geometry select tool: region select, mini menu, copy/cut/delete, paste preview with move/resize/rotate/flip, named Clipboard panel
 - [x] Local library, autosave, multiple maps (crash recovery pending)
@@ -92,7 +92,7 @@ Status: **in progress — editor surface, object interactions, shape selection, 
 ## M5 — Advanced IO
 
 - [ ] Watabou and donjon imports
-- [x] PDF export (UVTT pending)
+- [x] PDF and UVTT export
 - [x] Infinite canvas: viewport-driven background/grid, unlimited pan/zoom, content-bounds export and fit
 - [x] Map-studio view split into header, presets, layers, layer settings and object settings components
 - [x] UI/UX tests for folder creation, layer menus, visibility/lock, presets, layer style editing and object settings
@@ -133,3 +133,5 @@ Status: **in progress — editor surface, object interactions, shape selection, 
 | 2026-11-10 | Clipboard and paste preview  | Add named clipboard clips with thumbnails, preview paste with move/resize/rotate/flip, Enter commit and Escape cancel                                                                                                                                         |
 | 2026-11-10 | Door tool validation         | Add door variant, fill, stroke and rough tool settings, render both variants with styled panels, and mirror the fields in object settings (2086 tests / 248 files; coverage branches 87.00%)                                                                  |
 | 2026-11-10 | Stairs tool validation       | Add steps-per-cell, stroke and rough tool settings, step shortcuts, styled rendering and object settings (2089 tests / 248 files; coverage branches 87.00%)                                                                                                   |
+| 2026-11-10 | Left-side tool settings      | Move tool settings out of the bottom toolbar into the left sidebar under Presets/Clipboard; bottom toolbar now contains tools only (2091 tests / 249 files; coverage branches 87.00%)                                                                         |
+| 2026-11-10 | Door gaps and UVTT           | Add independent door endpoint handles, UVTT portal export, and finish the left-sidebar tool settings layout                                                                                                                                                   |

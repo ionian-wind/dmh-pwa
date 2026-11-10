@@ -185,10 +185,9 @@ Each panel is independent and remembers its scroll/expanded sections.
 - Tools laid out in documented order: Pan, Object, Rectangle, Circle/Regular Polygon, Path, Polygon, Wall, Select, Door, Stairs, Text, Stamp.
 - Active tool has a filled background and accessible pressed state.
 - Tool overflow is available on narrow screens; each tool also in a “Tools” menu for keyboard/screen readers.
-- Tool settings:
-  - Desktop: inline strip above toolbar (wrap to two rows) or a popover anchored to a settings button.
-  - Tablet: floating card above toolbar.
-  - Mobile: bottom sheet.
+- Tool settings live in the left sidebar under Presets and Clipboard, matching Dungeon Scrawl:
+  - Desktop: left panel with Mode, Snap, Division, Rough and tool-specific controls.
+  - Tablet/mobile: the same panel becomes a scrollable left sheet; the bottom toolbar keeps tool icons only.
 - Settings are grouped: Mode/Snap/Division universal; tool-specific sections; a “Reset tool settings” action.
 - Circle/regular polygon adds a Sides slider plus numeric input (1 = circle) and a Draw to selector (Point or Edge).
 - Polygon adds a Smooth toggle; with Snap off, dragging draws a freehand polygon.

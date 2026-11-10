@@ -18,6 +18,7 @@ const emit = defineEmits<{
   (e: 'apply'): void;
   (e: 'export', format: 'png' | 'webp' | 'jpg'): void;
   (e: 'export-pdf'): void;
+  (e: 'export-uvtt'): void;
 }>();
 
 const { t } = useI18n();
@@ -107,6 +108,9 @@ const { t } = useI18n();
             </QItem>
             <QItem clickable @click="emit('export-pdf')">
               <QItemSection>PDF</QItemSection>
+            </QItem>
+            <QItem clickable @click="emit('export-uvtt')">
+              <QItemSection>UVTT</QItemSection>
             </QItem>
           </QList>
         </QMenu>

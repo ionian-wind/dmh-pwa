@@ -63,6 +63,10 @@ const emit = defineEmits<{
   (event: 'selectMany', ids: string[]): void;
   (event: 'toggleSelect', id: string): void;
   (event: 'groupSelection'): void;
+  (
+    event: 'doorEndpointLive',
+    payload: { id: string; endpoint: 'a' | 'b'; point: Point },
+  ): void;
   (event: 'selectRegion', points: Point[]): void;
   (event: 'copyGeometry', points: Point[]): void;
   (event: 'cutGeometry', points: Point[]): void;
@@ -108,6 +112,12 @@ let drag:
       wall?: boolean;
     }
   | { kind: 'rough'; shape: DungeonShape; startScreen: Point }
+  | {
+      kind: 'door-endpoint';
+      id: string;
+      endpoint: 'a' | 'b';
+      start: Point;
+    }
   | { kind: 'paste-move'; last: Point }
   | {
       kind: 'paste-resize';
@@ -413,6 +423,24 @@ function onPointerDown(event: PointerEvent): void {
         x * 70 * vp.zoom + vp.x,
         y * 70 * vp.zoom + vp.y,
       ];
+      if (selected.type === 'door') {
+        for (const endpoint of ['a', 'b'] as const) {
+          const [hx, hy] = toScreen(
+            selected[endpoint][0],
+            selected[endpoint][1],
+          );
+          if (Math.hypot(sx - hx, sy - hy) < 16) {
+            drag = {
+              kind: 'door-endpoint',
+              id: selected.id,
+              endpoint,
+              start: point,
+            };
+            emit('beginObjectDrag');
+            return;
+          }
+        }
+      }
       const corners: Array<{
         corner: 'nw' | 'ne' | 'sw' | 'se';
         x: number;
@@ -678,6 +706,14 @@ function onPointerMove(event: PointerEvent): void {
     return;
   }
   const current = renderer.value.screenToWorld(sx, sy);
+  if (drag.kind === 'door-endpoint') {
+    emit('doorEndpointLive', {
+      id: drag.id,
+      endpoint: drag.endpoint,
+      point: [snap(current[0]), snap(current[1])],
+    });
+    return;
+  }
   if (drag.kind === 'resize') {
     const current = renderer.value.screenToWorld(sx, sy);
     const dx = current[0] - drag.start[0];
@@ -914,7 +950,8 @@ function onPointerUp(event: PointerEvent): void {
   if (
     drag.kind === 'object' ||
     drag.kind === 'resize' ||
-    drag.kind === 'rotate'
+    drag.kind === 'rotate' ||
+    drag.kind === 'door-endpoint'
   ) {
     const clickEdit =
       drag.kind === 'object' &&
@@ -1317,7 +1354,11 @@ function updateSelection(): void {
   renderer.value?.setShapeSelection(props.selectedShape ?? null);
   const objects = selectedObjects();
   const bounds = unionBounds(objects);
-  renderer.value?.setSelection(bounds);
+  const doorEndpoints =
+    objects.length === 1 && objects[0].type === 'door'
+      ? [objects[0].a, objects[0].b]
+      : [];
+  renderer.value?.setSelection(bounds, doorEndpoints);
   if (objects.length > 1 && bounds && renderer.value) {
     const vp = renderer.value.getViewport();
     const groupId = objects[0].groupId ?? null;

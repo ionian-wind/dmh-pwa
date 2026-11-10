@@ -281,7 +281,7 @@ export class PixiStudioRenderer {
     this.render();
   }
 
-  setSelection(bounds: Bounds | null): void {
+  setSelection(bounds: Bounds | null, doorEndpoints: Point[] = []): void {
     this.selectionLayer.clear();
     if (!bounds) {
       this.render();
@@ -311,6 +311,12 @@ export class PixiStudioRenderer {
       .circle(x + w / 2, y - handle * 2, handle * 0.7)
       .fill('#ffffff')
       .stroke({ color: '#2d6fb3', width: 2 });
+    for (const [ex, ey] of doorEndpoints) {
+      this.selectionLayer
+        .circle(ex * ppc, ey * ppc, handle * 0.55)
+        .fill('#ffffff')
+        .stroke({ color: '#8b5cf6', width: 2 });
+    }
     this.render();
   }
 
