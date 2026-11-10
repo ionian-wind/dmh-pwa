@@ -1227,6 +1227,8 @@
     "sendBackward": "Ниже",
     "fontSize": "Размер шрифта",
     "variant": "Вариант",
+    "fill": "Заливка",
+    "stroke": "Обводка",
     "steps": "Ступени",
     "rotation": "Поворот",
     "flipHorizontal": "Отразить по горизонтали",

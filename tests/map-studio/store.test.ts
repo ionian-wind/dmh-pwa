@@ -120,6 +120,42 @@ describe('map studio store workflows', () => {
 });
 
 describe('map studio shape helpers', () => {
+  it('creates stairs with the configured style', () => {
+    const store = useMapStudioStore();
+    store.setMap(createMap(createProject().id));
+    store.toolSettings.stairsSteps = 5;
+    store.toolSettings.stairsStroke = '#778899';
+    store.toolSettings.stairsRough = 3;
+    store.addStairs([
+      [0, 0],
+      [2, 0],
+      [2, 2],
+    ]);
+    expect(store.imagesLayer!.objects[0]).toMatchObject({
+      type: 'stairs',
+      stepsPerCell: 5,
+      stroke: '#778899',
+      rough: 3,
+    });
+  });
+
+  it('creates doors with the configured style', () => {
+    const store = useMapStudioStore();
+    store.setMap(createMap(createProject().id));
+    store.toolSettings.doorVariant = 1;
+    store.toolSettings.doorFill = '#112233';
+    store.toolSettings.doorStroke = '#445566';
+    store.toolSettings.doorRough = 2;
+    store.addDoor([0, 0], [2, 0]);
+    expect(store.imagesLayer!.objects[0]).toMatchObject({
+      type: 'door',
+      variant: 1,
+      fill: '#112233',
+      stroke: '#445566',
+      rough: 2,
+    });
+  });
+
   it('adds circles and polygons in draw and erase modes', () => {
     const store = useMapStudioStore();
     const project = createProject();

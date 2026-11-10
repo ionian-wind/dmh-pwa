@@ -254,6 +254,7 @@ export interface DoorObject extends ObjectBase {
   variant: 0 | 1;
   fill: string;
   stroke: string;
+  rough: Roughness;
   transform: Transform;
 }
 
@@ -262,6 +263,7 @@ export interface StairsObject extends ObjectBase {
   points: Point[];
   stepsPerCell: number;
   stroke: string;
+  rough: Roughness;
   transform: Transform;
 }
 
@@ -284,6 +286,13 @@ export interface ToolSettings {
   wallWidth: number;
   wallDash: boolean;
   wallDashSize: number;
+  doorVariant: 0 | 1;
+  doorFill: string;
+  doorStroke: string;
+  doorRough: Roughness;
+  stairsSteps: number;
+  stairsStroke: string;
+  stairsRough: Roughness;
   sides: number;
   drawTo: 'point' | 'edge';
   smooth: boolean;

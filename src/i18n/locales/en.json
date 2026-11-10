@@ -1226,6 +1226,8 @@
     "sendBackward": "Send backward",
     "fontSize": "Font size",
     "variant": "Variant",
+    "fill": "Fill",
+    "stroke": "Stroke",
     "steps": "Steps",
     "rotation": "Rotation",
     "flipHorizontal": "Flip horizontal",

@@ -81,6 +81,12 @@ export function createDoorObject(
   a: Point,
   b: Point,
   order: number,
+  style: Partial<{
+    variant: 0 | 1;
+    fill: string;
+    stroke: string;
+    rough: DoorObject['rough'];
+  }> = {},
 ): DoorObject {
   const width = Math.max(0.2, Math.hypot(b[0] - a[0], b[1] - a[1]));
   return {
@@ -88,9 +94,10 @@ export function createDoorObject(
     type: 'door',
     a,
     b,
-    variant: 0,
-    fill: '#f4efe4',
-    stroke: '#1f2933',
+    variant: style.variant ?? 0,
+    fill: style.fill ?? '#f4efe4',
+    stroke: style.stroke ?? '#1f2933',
+    rough: style.rough ?? 0,
     transform: createTransform(a[0], a[1], width, 0.18),
   };
 }
@@ -113,6 +120,11 @@ export function createImageObject(
 export function createStairsObject(
   points: Point[],
   order: number,
+  style: Partial<{
+    stepsPerCell: number;
+    stroke: string;
+    rough: StairsObject['rough'];
+  }> = {},
 ): StairsObject {
   const xs = points.map((point) => point[0]);
   const ys = points.map((point) => point[1]);
@@ -122,8 +134,9 @@ export function createStairsObject(
     ...base(order),
     type: 'stairs',
     points,
-    stepsPerCell: 3,
-    stroke: '#1f2933',
+    stepsPerCell: style.stepsPerCell ?? 3,
+    stroke: style.stroke ?? '#1f2933',
+    rough: style.rough ?? 0,
     transform: createTransform(
       minX,
       minY,

@@ -202,22 +202,26 @@ Flow:
 
 ## 13. Door tool
 
-- Two clicks: `a`, `b` define the door opening (position/width). Snap applies.
-- Object stored with `transform` derived from endpoints; `variant` selects visual.
-- Fill/stroke colors, rough level; render as a rectangular door leaf/threshold + swing/arc variant.
-- Placed in the Images layer/folder (active folder).
-- Edit via Object tool: drag endpoints/handles; Layer Settings shows door fields.
-- Doors are excluded from floor geometry but included in wall gaps/UVTT door list.
-- On top of a wall, cut a gap in the wall? Dungeon Scrawl places doors as objects over walls; our wall renderer can optionally mask a gap under the door bounds. Plan: door render covers the wall; export UVTT includes door segment; optional wall gap masking as P2.
+- Two clicks: `a`, `b` define the door opening (position/width). Snap/Division applies.
+- Object stored with `transform` derived from endpoints; `variant` selects one of two visuals:
+  - variant 1: single filled panel across the opening
+  - variant 2: two split leaves with a centre gap
+- Tool settings: variant, fill colour, stroke colour and rough level (0–3); the object settings mirror them.
+- Placed in the Images layer/folder.
+- Edit via Object tool: move/resize/rotate through the normal handles; the door fields are in Layer Settings.
+- Roughness is applied to the rendered panel outline.
+- Not yet implemented: editing door endpoints independently, wall-gap masking, and UVTT door export.
 
 ## 14. Stairs tool
 
 - Three clicks:
   - `a` and `b`: width/top step endpoints.
   - `c`: bottom step anchor/direction.
-- Object stores endpoints; steps = parallel lines between top and bottom, count from `stepsPerCell` × distance.
-- Stroke color/rough; placed in Images layer.
-- Object tool moves/rotates/scales; editing endpoints can be handled by bounding box + direction handle.
+- Object stores endpoints and `stepsPerCell`; parallel step lines interpolate from the top edge to the bottom anchor.
+- Tool settings: steps per cell, stroke colour and rough level (0–3); the object settings mirror them.
+- `[` / `]` decrease/increase steps, and digit keys set the step count while the Stairs tool is active.
+- Placed in the Images layer.
+- Object tool moves/resizes/rotates the stairs through the normal handles.
 - Rendering supports straight stairs; curved stairs are out of scope unless approximated by multiple objects.
 
 ## 15. Text tool

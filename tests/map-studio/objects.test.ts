@@ -19,6 +19,7 @@ describe('map studio objects', () => {
     });
     expect(objectBounds(long).width).toBeGreaterThan(3);
     const door = createDoorObject([0, 0], [1, 0], 2);
+    expect(door.rough).toBe(0);
     expect(objectBounds(door)).toMatchObject({ x: 0, y: 0, width: 1 });
     const stairs = createStairsObject(
       [

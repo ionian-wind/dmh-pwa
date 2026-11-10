@@ -531,6 +531,17 @@ describe('MapStudioView UI', () => {
     wrapper.unmount();
   });
 
+  it('shows stair and door styling controls', async () => {
+    const { wrapper, store } = await mountView();
+    store.setTool('stairs');
+    await flushPromises();
+    expect(wrapper.findAll('input[type="color"]').length).toBeGreaterThan(0);
+    store.setTool('door');
+    await flushPromises();
+    expect(wrapper.findAll('input[type="color"]').length).toBeGreaterThan(1);
+    wrapper.unmount();
+  });
+
   it('shows smooth and wall styling controls', async () => {
     const { wrapper, store } = await mountView();
     store.setTool('polygon');

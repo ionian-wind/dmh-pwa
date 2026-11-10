@@ -237,6 +237,7 @@ function normalizeObject(value: unknown): StudioObject | null {
       variant: object.variant === 1 ? 1 : 0,
       fill: typeof object.fill === 'string' ? object.fill : '#f4efe4',
       stroke: typeof object.stroke === 'string' ? object.stroke : '#1f2933',
+      rough: ([0, 1, 2, 3] as const).includes(object.rough) ? object.rough : 0,
       transform,
     };
   }
@@ -253,6 +254,7 @@ function normalizeObject(value: unknown): StudioObject | null {
       points,
       stepsPerCell: Math.max(1, number(object.stepsPerCell, 3)),
       stroke: typeof object.stroke === 'string' ? object.stroke : '#1f2933',
+      rough: ([0, 1, 2, 3] as const).includes(object.rough) ? object.rough : 0,
       transform,
     };
   }

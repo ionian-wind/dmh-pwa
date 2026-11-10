@@ -15,6 +15,8 @@ interface StudioHotkeyActions {
   toggleSnap?: () => void;
   setDivision?: (division: number) => void;
   adjustRadius?: (delta: -1 | 1) => void;
+  adjustSteps?: (delta: -1 | 1) => void;
+  setSteps?: (steps: number) => void;
   cutSelection?: () => void;
   copySelection?: () => void;
   pasteSelection?: () => void;
@@ -147,6 +149,18 @@ export function useStudioHotkeys(actions: StudioHotkeyActions): void {
         event.key === 'ArrowUp' ? -step : event.key === 'ArrowDown' ? step : 0;
       actions.nudgeSelection?.(dx, dy);
       return;
+    }
+    if (actions.getTool?.() === 'stairs') {
+      if (event.key === '[' || event.key === ']') {
+        event.preventDefault();
+        actions.adjustSteps?.(event.key === '[' ? -1 : 1);
+        return;
+      }
+      if (/^[1-9]$/.test(event.key)) {
+        event.preventDefault();
+        actions.setSteps?.(Number(event.key));
+        return;
+      }
     }
     if (event.key === '[' || event.key === ']') {
       if (actions.hasObjectSelection?.()) {

@@ -68,8 +68,8 @@ Status: **in progress — editor surface, object interactions, shape selection, 
 - [x] Multi-object batch panel: common opacity/rotation/type fields and batch duplicate, z-order, flip and delete actions
 - [ ] Images panel, upload, drag/drop, favorites
 - [x] Text tool: click-to-place inline editing, second-click edit, font/size/colour/alignment, drop shadow, object settings
-- [x] Door tool: two-point placement (variants pending)
-- [x] Stairs tool: three-point placement (style editing pending)
+- [x] Door tool: two-point placement, two variants, fill/stroke colours, rough outline, object settings
+- [x] Stairs tool: three-point placement, steps-per-cell, stroke, rough, bracket/digit shortcuts, object settings
 - [x] Geometry select tool: region select, mini menu, copy/cut/delete, paste preview with move/resize/rotate/flip, named Clipboard panel
 - [x] Local library, autosave, multiple maps (crash recovery pending)
 - [ ] `.ds` import/export baseline
@@ -131,3 +131,5 @@ Status: **in progress — editor surface, object interactions, shape selection, 
 | 2026-11-10 | Select tool validation       | Add separate Select tool with polygon/freehand regions, selection mini menu, geometry clipboard copy/cut/delete and draw/erase paste (2083 tests / 248 files; coverage branches 87.02%)                                                                       |
 | 2026-11-10 | Wall tool validation         | Add snap-off freehand walls, smooth curves, post-draw rough, dashed strokes with continuous dash phase, and width/dash tool settings (2083 tests / 248 files; coverage branches 87.02%)                                                                       |
 | 2026-11-10 | Clipboard and paste preview  | Add named clipboard clips with thumbnails, preview paste with move/resize/rotate/flip, Enter commit and Escape cancel                                                                                                                                         |
+| 2026-11-10 | Door tool validation         | Add door variant, fill, stroke and rough tool settings, render both variants with styled panels, and mirror the fields in object settings (2086 tests / 248 files; coverage branches 87.00%)                                                                  |
+| 2026-11-10 | Stairs tool validation       | Add steps-per-cell, stroke and rough tool settings, step shortcuts, styled rendering and object settings (2089 tests / 248 files; coverage branches 87.00%)                                                                                                   |

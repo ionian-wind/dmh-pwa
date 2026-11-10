@@ -79,6 +79,15 @@ useStudioHotkeys({
       Number((store.toolSettings.pathRadius + delta * step).toFixed(3)),
     );
   },
+  adjustSteps: (delta) => {
+    store.toolSettings.stairsSteps = Math.max(
+      1,
+      Math.min(20, store.toolSettings.stairsSteps + delta),
+    );
+  },
+  setSteps: (steps) => {
+    store.toolSettings.stairsSteps = Math.max(1, Math.min(20, steps));
+  },
   cutSelection: () => {
     if (geometryRegion.value) {
       store.cutGeometrySelection(geometryRegion.value);
@@ -172,6 +181,14 @@ const divisions = [1, 2, 3, 4, 6, 8, 9].map((value) => ({
   label: `1/${value}`,
   value,
 }));
+const roughnessOptions = [0, 1, 2, 3].map((value) => ({
+  label: String(value),
+  value,
+}));
+const doorVariantOptions = [
+  { label: '1', value: 0 },
+  { label: '2', value: 1 },
+];
 const drawToOptions = computed(() => [
   { label: t('mapStudio.point'), value: 'point' },
   { label: t('mapStudio.edge'), value: 'edge' },
@@ -621,6 +638,80 @@ async function applyToLocation(): Promise<void> {
             step="0.05"
             :label="t('mapStudio.dashSize')"
             class="studio-sides-input"
+          />
+        </template>
+        <template v-if="store.tool === 'stairs'">
+          <QInput
+            v-model.number="store.toolSettings.stairsSteps"
+            dense
+            outlined
+            type="number"
+            min="1"
+            step="1"
+            :label="t('mapStudio.steps')"
+            class="studio-sides-input"
+          />
+          <input
+            type="color"
+            :value="store.toolSettings.stairsStroke"
+            :aria-label="t('mapStudio.stroke')"
+            @input="
+              store.toolSettings.stairsStroke = (
+                $event.target as HTMLInputElement
+              ).value
+            "
+          />
+          <QSelect
+            v-model="store.toolSettings.stairsRough"
+            dense
+            outlined
+            emit-value
+            map-options
+            :options="roughnessOptions"
+            :label="t('mapStudio.rough')"
+            class="studio-division"
+          />
+        </template>
+        <template v-if="store.tool === 'door'">
+          <QSelect
+            v-model="store.toolSettings.doorVariant"
+            dense
+            outlined
+            emit-value
+            map-options
+            :options="doorVariantOptions"
+            :label="t('mapStudio.variant')"
+            class="studio-division"
+          />
+          <input
+            type="color"
+            :value="store.toolSettings.doorFill"
+            :aria-label="t('mapStudio.fill')"
+            @input="
+              store.toolSettings.doorFill = (
+                $event.target as HTMLInputElement
+              ).value
+            "
+          />
+          <input
+            type="color"
+            :value="store.toolSettings.doorStroke"
+            :aria-label="t('mapStudio.stroke')"
+            @input="
+              store.toolSettings.doorStroke = (
+                $event.target as HTMLInputElement
+              ).value
+            "
+          />
+          <QSelect
+            v-model="store.toolSettings.doorRough"
+            dense
+            outlined
+            emit-value
+            map-options
+            :options="roughnessOptions"
+            :label="t('mapStudio.rough')"
+            class="studio-division"
           />
         </template>
         <template v-if="store.tool === 'text'">

@@ -44,6 +44,44 @@ export type StudioPreview =
   | { kind: 'line'; points: Point[] }
   | { kind: 'polygons'; polygons: Point[][] };
 
+function doorPanel(
+  a: Point,
+  b: Point,
+  thickness: number,
+  rough: number,
+  seed: number,
+): Point[][] {
+  const dx = b[0] - a[0];
+  const dy = b[1] - a[1];
+  const length = Math.hypot(dx, dy) || 1;
+  const ux = dx / length;
+  const uy = dy / length;
+  const nx = -uy;
+  const ny = ux;
+  const steps = Math.max(2, Math.ceil(length / 0.35));
+  const amplitude = [0, 0.015, 0.035, 0.06][rough] ?? 0;
+  const jitter = (index: number) => {
+    const value = Math.sin(seed * 12.9898 + index * 78.233) * 43758.5453;
+    return (value - Math.floor(value) - 0.5) * amplitude;
+  };
+  const top: Point[] = [];
+  const bottom: Point[] = [];
+  for (let index = 0; index <= steps; index += 1) {
+    const t = index / steps;
+    const x = a[0] + dx * t;
+    const y = a[1] + dy * t;
+    top.push([
+      x + nx * (thickness / 2 + jitter(index * 2)),
+      y + ny * (thickness / 2 + jitter(index * 2)),
+    ]);
+    bottom.push([
+      x - nx * (thickness / 2 + jitter(index * 2 + 1)),
+      y - ny * (thickness / 2 + jitter(index * 2 + 1)),
+    ]);
+  }
+  return [[...top, ...bottom.reverse()]];
+}
+
 export class PixiStudioRenderer {
   private app: Application | null = null;
   private host: HTMLElement | null = null;
@@ -479,21 +517,63 @@ export class PixiStudioRenderer {
           }
         } else if (object.type === 'door') {
           const graphics = new Graphics();
-          graphics
-            .moveTo(object.a[0] * ppc, object.a[1] * ppc)
-            .lineTo(object.b[0] * ppc, object.b[1] * ppc)
-            .stroke({ color: object.stroke, width: 6 });
+          const seed = object.id.length * 17 + object.a[0] * 13;
+          if (object.variant === 1) {
+            const mid: Point = [
+              (object.a[0] + object.b[0]) / 2,
+              (object.a[1] + object.b[1]) / 2,
+            ];
+            const dx = object.b[0] - object.a[0];
+            const dy = object.b[1] - object.a[1];
+            const length = Math.hypot(dx, dy) || 1;
+            const ux = dx / length;
+            const uy = dy / length;
+            const gap = 0.06;
+            const left: Point = [mid[0] - ux * gap, mid[1] - uy * gap];
+            const right: Point = [mid[0] + ux * gap, mid[1] + uy * gap];
+            const panels = [
+              ...doorPanel(object.a, left, 0.18, object.rough, seed),
+              ...doorPanel(right, object.b, 0.18, object.rough, seed + 1),
+            ];
+            for (const panel of panels) {
+              graphics
+                .poly(panel.flatMap(([x, y]) => [x * ppc, y * ppc]))
+                .fill(object.fill)
+                .stroke({ color: object.stroke, width: 2 });
+            }
+          } else {
+            for (const panel of doorPanel(
+              object.a,
+              object.b,
+              0.18,
+              object.rough,
+              seed,
+            )) {
+              graphics
+                .poly(panel.flatMap(([x, y]) => [x * ppc, y * ppc]))
+                .fill(object.fill)
+                .stroke({ color: object.stroke, width: 2 });
+            }
+          }
           this.objectsContainer.addChild(graphics);
         } else if (object.type === 'stairs') {
           const graphics = new Graphics();
           const [a, b, c] = object.points;
           const steps = Math.max(2, object.stepsPerCell);
+          const amplitude = [0, 0.015, 0.035, 0.06][object.rough] ?? 0;
+          const seed = object.id.length * 23 + a[0] * 7;
+          const jitter = (index: number, axis: number) => {
+            const value =
+              Math.sin(seed * 12.9898 + (index * 2 + axis) * 78.233) *
+              43758.5453;
+            return (value - Math.floor(value) - 0.5) * amplitude;
+          };
           for (let index = 0; index <= steps; index += 1) {
             const t = index / steps;
-            const x1 = a[0] + (b[0] - a[0]) * t;
-            const y1 = a[1] + (b[1] - a[1]) * t;
-            const x2 = x1 + (c[0] - b[0]) * t;
-            const y2 = y1 + (c[1] - b[1]) * t;
+            const x1 = a[0] + (b[0] - a[0]) * t + jitter(index, 0);
+            const y1 = a[1] + (b[1] - a[1]) * t + jitter(index, 1);
+            const x2 = x1 + (c[0] - b[0]) * t + jitter(index, 2);
+            const y2 = y1 + (c[1] - b[1]) * t + jitter(index, 3);
             graphics
               .moveTo(x1 * ppc, y1 * ppc)
               .lineTo(x2 * ppc, y2 * ppc)

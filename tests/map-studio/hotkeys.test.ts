@@ -210,3 +210,29 @@ describe('map studio object hotkeys', () => {
     wrapper.unmount();
   });
 });
+
+describe('map studio stairs step hotkeys', () => {
+  it('adjusts stair steps with brackets and digits', () => {
+    const adjustSteps = vi.fn();
+    const setSteps = vi.fn();
+    const HarnessStairs = defineComponent({
+      setup() {
+        useStudioHotkeys({
+          ...actions,
+          getTool: () => 'stairs' as const,
+          adjustSteps,
+          setSteps,
+        });
+        return () => null;
+      },
+    });
+    const wrapper = mount(HarnessStairs);
+    window.dispatchEvent(new KeyboardEvent('keydown', { key: ']' }));
+    expect(adjustSteps).toHaveBeenCalledWith(1);
+    window.dispatchEvent(new KeyboardEvent('keydown', { key: '[' }));
+    expect(adjustSteps).toHaveBeenCalledWith(-1);
+    window.dispatchEvent(new KeyboardEvent('keydown', { key: '6' }));
+    expect(setSteps).toHaveBeenCalledWith(6);
+    wrapper.unmount();
+  });
+});

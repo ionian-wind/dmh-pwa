@@ -70,6 +70,13 @@ export const useMapStudioStore = defineStore('mapStudio', () => {
     wallWidth: 0.08,
     wallDash: false,
     wallDashSize: 0.4,
+    doorVariant: 0,
+    doorFill: '#f4efe4',
+    doorStroke: '#1f2933',
+    doorRough: 0,
+    stairsSteps: 3,
+    stairsStroke: '#1f2933',
+    stairsRough: 0,
     sides: 1,
     drawTo: 'point',
     smooth: false,
@@ -658,7 +665,12 @@ export const useMapStudioStore = defineStore('mapStudio', () => {
     if (Math.hypot(b[0] - a[0], b[1] - a[1]) < 0.1) return;
     setObjects([
       ...(imagesLayer.value?.objects ?? []),
-      createDoorObject(a, b, nextObjectOrder()),
+      createDoorObject(a, b, nextObjectOrder(), {
+        variant: toolSettings.value.doorVariant,
+        fill: toolSettings.value.doorFill,
+        stroke: toolSettings.value.doorStroke,
+        rough: toolSettings.value.doorRough,
+      }),
     ]);
   }
 
@@ -666,7 +678,11 @@ export const useMapStudioStore = defineStore('mapStudio', () => {
     if (points.length < 3) return;
     setObjects([
       ...(imagesLayer.value?.objects ?? []),
-      createStairsObject(points, nextObjectOrder()),
+      createStairsObject(points, nextObjectOrder(), {
+        stepsPerCell: toolSettings.value.stairsSteps,
+        stroke: toolSettings.value.stairsStroke,
+        rough: toolSettings.value.stairsRough,
+      }),
     ]);
   }
 

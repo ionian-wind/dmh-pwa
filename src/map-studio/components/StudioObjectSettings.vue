@@ -200,6 +200,46 @@ function updateTransform(key: string, value: number): void {
         <option :value="1">2</option>
       </select>
     </label>
+    <label v-if="object.type === 'door'" class="studio-field">
+      <span>{{ t('mapStudio.fill') }}</span>
+      <input
+        type="color"
+        :value="object.fill"
+        @input="
+          updateSelected({
+            fill: ($event.target as HTMLInputElement).value,
+          })
+        "
+      />
+    </label>
+    <label v-if="object.type === 'door'" class="studio-field">
+      <span>{{ t('mapStudio.stroke') }}</span>
+      <input
+        type="color"
+        :value="object.stroke"
+        @input="
+          updateSelected({
+            stroke: ($event.target as HTMLInputElement).value,
+          })
+        "
+      />
+    </label>
+    <label v-if="object.type === 'door'" class="studio-field">
+      <span>{{ t('mapStudio.rough') }}</span>
+      <select
+        :value="object.rough"
+        @change="
+          updateSelected({
+            rough: Number(($event.target as HTMLSelectElement).value),
+          })
+        "
+      >
+        <option :value="0">0</option>
+        <option :value="1">1</option>
+        <option :value="2">2</option>
+        <option :value="3">3</option>
+      </select>
+    </label>
     <label v-if="object.type === 'stairs'" class="studio-field">
       <span>{{ t('mapStudio.steps') }}</span>
       <input
@@ -214,6 +254,34 @@ function updateTransform(key: string, value: number): void {
           })
         "
       />
+    </label>
+    <label v-if="object.type === 'stairs'" class="studio-field">
+      <span>{{ t('mapStudio.stroke') }}</span>
+      <input
+        type="color"
+        :value="object.stroke"
+        @input="
+          updateSelected({
+            stroke: ($event.target as HTMLInputElement).value,
+          })
+        "
+      />
+    </label>
+    <label v-if="object.type === 'stairs'" class="studio-field">
+      <span>{{ t('mapStudio.rough') }}</span>
+      <select
+        :value="object.rough"
+        @change="
+          updateSelected({
+            rough: Number(($event.target as HTMLSelectElement).value),
+          })
+        "
+      >
+        <option :value="0">0</option>
+        <option :value="1">1</option>
+        <option :value="2">2</option>
+        <option :value="3">3</option>
+      </select>
     </label>
     <template v-if="object.type === 'text'">
       <label class="studio-field studio-field--check">
